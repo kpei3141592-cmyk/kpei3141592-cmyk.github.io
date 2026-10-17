@@ -49,8 +49,12 @@ or plain Markdown, keeping the `{: .img-fluid}` so large images shrink to fit th
 
 ## Previewing before you publish
 
-Double-click **`preview.bat`**. It opens http://localhost:4000 in your browser, shows your drafts too, and reloads the page
-whenever you save a file. Stop it with Ctrl+C in its window. Nothing goes online until you push.
+Double-click **`preview.bat`**. It downloads any edits you made on github.com, opens http://localhost:4000 in your browser,
+shows your drafts too, and reloads the page whenever files change. Stop it with Ctrl+C in its window. Nothing goes online
+until you push.
+
+Edited something on github.com while the preview is open? Double-click `preview.bat` again. It downloads the edits and the
+open preview page refreshes by itself.
 
 The preview skips the automatic image resizing (a Windows quirk), so images are shown at full size. The yellow warning
 about `jupyter-nbconvert` is harmless.
