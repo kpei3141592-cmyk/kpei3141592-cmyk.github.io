@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://kpei3141592-cmyk.github.io/sitemap.xml
