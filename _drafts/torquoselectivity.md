@@ -13,3 +13,5 @@ By the Woodward-Hoffmann rules, a $$4\pi$$ ring opening is conrotatory. However,
 The left-hand product (Z) is favored despite the (E) product being thermodynamically favorable.
 
 So what favors inward rotation?
+
+![Molecular orbitals of a $$4\pi$$ ring opening](/assets/img/Torquo-TS-orbitals.png.png){: .img-fluid}
