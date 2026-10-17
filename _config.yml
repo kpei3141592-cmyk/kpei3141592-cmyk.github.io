@@ -232,6 +232,7 @@ exclude:
   - lighthouse_results/
   - package.json
   - package-lock.json
+  - preview.bat
   - _pages/about_einstein.md
   - purgecss.config.js
   - README.md
@@ -682,9 +683,7 @@ third_party_libraries:
 # Get external JSON data
 # -----------------------------------------------------------------------------
 
-jekyll_get_json:
-  - data: resume
-    json: assets/json/resume.json # it can also be an url
+jekyll_get_json: [] # e.g. [{data: resume, json: assets/json/resume.json}] (file path or URL)
 
 jsonresume:
   - basics

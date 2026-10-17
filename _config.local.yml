@@ -1,0 +1,5 @@
+# Extra settings used only by preview.bat for previewing on this computer.
+# The live site (built by GitHub) ignores this file.
+
+imagemagick:
+  enabled: false # Windows' built-in "convert" command clashes with ImageMagick, so skip image resizing in previews
