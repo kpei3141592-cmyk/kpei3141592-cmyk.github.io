@@ -20,3 +20,5 @@ As we can see, the HOMO has $$\sigma$$ character, and the LUMO has $$\sigma^*$$ 
 
 ![Frontier orbitals of a $$4\pi$$ ring opening along with positions of substituents in either case](/assets/img/frontier-orbital-interaction-torquo.png){: .img-fluid}
 
+The figure shows the frontier orbitals in the transition state, with possible substituent locations.
+
