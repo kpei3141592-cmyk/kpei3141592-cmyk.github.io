@@ -15,3 +15,5 @@ The left-hand product (Z) is favored despite the (E) product being thermodynamic
 So what favors inward rotation?
 
 ![Molecular orbitals of a $$4\pi$$ ring opening](/assets/img/Torquo-TS-orbitals.png){: .img-fluid}
+
+As we can see, the HOMO has $$\sigma$$ character and the LUMO has $$\sigma^*$$ character
