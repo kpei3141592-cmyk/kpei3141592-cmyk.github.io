@@ -16,4 +16,4 @@ So what favors inward rotation?
 
 ![Molecular orbitals of a $$4\pi$$ ring opening](/assets/img/Torquo-TS-orbitals.png){: .img-fluid}
 
-As we can see, the HOMO has $$\sigma$$ character and the LUMO has $$\sigma^*$$ character
+As we can see, the HOMO has $$\sigma$$ character, and the LUMO has $$\sigma^*$$ character and can interact with substituents' p-orbitals.
