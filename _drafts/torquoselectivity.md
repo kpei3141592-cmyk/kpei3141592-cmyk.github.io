@@ -22,3 +22,6 @@ As we can see, the HOMO has $$\sigma$$ character, and the LUMO has $$\sigma^*$$ 
 
 The figure shows the frontier orbitals in the transition state, with possible substituent locations.
 
+What happens if the substituent rotates inward?
+
+![Frontier orbitals of a $$4\pi$$ ring opening along with positions of substituents in either case](/assets/img/inwards-torquo.png){: .img-fluid}
