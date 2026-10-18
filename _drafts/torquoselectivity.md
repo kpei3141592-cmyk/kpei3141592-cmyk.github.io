@@ -18,4 +18,4 @@ So what favors inward rotation?
 
 As we can see, the HOMO has $$\sigma$$ character, and the LUMO has $$\sigma^*$$ character and can interact with substituents' p-orbitals.
 
-![Frontier orbitals of a $$4\pi$$ ring opening along with positions of substituents in either case](assets/img/frontier-orbital-interaction-torquo.png){: .img-fluid}
+![Frontier orbitals of a $$4\pi$$ ring opening along with positions of substituents in either case](/assets/img/frontier-orbital-interaction-torquo.png){: .img-fluid}
