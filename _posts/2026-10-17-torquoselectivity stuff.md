@@ -27,3 +27,7 @@ What happens if the substituent rotates inward?
 ![Frontier orbitals of a $$4\pi$$ ring opening along with positions of substituents in either case](/assets/img/inwards-torquo.png){: .img-fluid}
 
 As we can see, the substituent will stabilize the HOMO and destabilize the LUMO. Thus, electron-donating substituents will tend to rotate outwards because of the destabilizing interaction with the LUMO. Conversely, acceptor substituents will rotate inwards due to the stabilizing interaction with the HOMO. (The LUMOs are empty, so there is no destabilizing interaction).
+
+Sources: https://chemistry.stackexchange.com/questions/81188/stereoelectronic-effects-in-torquoselectivity-of-4%CF%80-electrocyclic-opening
+
+Rondan, N. G.; Houk, K. N. Theory of stereoselection in conrotatory electrocyclic reactions of substituted cyclobutenes. J. Am. Chem. Soc. 1985, 107 (7), 2099–2111. DOI: 10.1021/ja00293a046
