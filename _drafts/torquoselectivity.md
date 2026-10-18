@@ -25,3 +25,5 @@ The figure shows the frontier orbitals in the transition state, with possible su
 What happens if the substituent rotates inward?
 
 ![Frontier orbitals of a $$4\pi$$ ring opening along with positions of substituents in either case](/assets/img/inwards-torquo.png){: .img-fluid}
+
+As we can see, the substituent will stabilize the HOMO and destabilize the LUMO. Thus, electron-donating substituents will tend to rotate outwards because of the destabilizing interaction with the LUMO. Conversely, acceptor substituents will rotate inwards due to the stabilizing interaction with the HOMO. (The LUMOs are empty, so there is no destabilizing interaction).
