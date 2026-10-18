@@ -23,4 +23,5 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
+High school student interested in chemistry
 <!-- Write your bio here in Markdown. This comment won't appear on the site. -->
