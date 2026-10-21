@@ -27,3 +27,7 @@ Now we can go on to changing $$n$$ while keeping the number of SEPs the same. If
 Shown here is a great diagram to understand these structures. Now I was curious: where do these names come from? Turns out that closo means closed cage, nido means nest, arachno means spider's web, and hypho means net. What an interesting naming scheme.
 
 Another thing I am curious about is the reason for requiring $n+1$ SEPs. It seems to have something to do with MOs, and I will be posting about that in more detail in part 2!
+
+Sources: https://chem.libretexts.org/Bookshelves/Inorganic_Chemistry/Chemistry_of_the_Main_Group_Elements_(Barron)/06%3A_Group_13/6.05%3A_Wades_Rules
+
+https://en.wikipedia.org/wiki/Polyhedral_skeletal_electron_pair_theory
