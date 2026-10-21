@@ -10,3 +10,10 @@ I was doing some SciBowl sets a few days ago, and I came across something called
 
 | Vertices | Polyhedron |
 | :--- | :--- |
+| 4 | Tetrahedron |
+| 5 | Trigonal bipyramid |
+| 6 | Octahedron |
+| 7 | Pentagonal bipyramid |
+| 8 | Snub disphenoid |
+| 9 | Tricapped trigonal prism |
+| 10 | Bicapped square antiprism |
