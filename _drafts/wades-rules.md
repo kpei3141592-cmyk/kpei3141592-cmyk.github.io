@@ -19,3 +19,5 @@ I was doing some SciBowl sets a few days ago, and I came across something called
 | 10 | Bicapped square antiprism |
 
 OK. Everything looks pretty normal except for the snub disphenoid?? Most of these look similar to VSEPR structures. Actually, this happens because there is a requirement for all faces to be triangular due to some MO interactions that I will go over in part 2. A normal VSEPR structure for a steric number of 8 is a square antiprism, which has square faces.
+
+Now we can go on to changing $$n$$ while keeping the number of SEPs the same. If we have $n-1$ sides, we remove a vertex and call it a **nido** structure. If we remove another vertex, it is an **arachno** structure. Removing one more gets us a **hypho** structure. Alternatively, to add vertices, we "cap" a triangular face with an additional vertex, which forms kind of a tetrahedron there.
