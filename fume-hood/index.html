@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="A swipeable feed of 87 real inorganic chemistry reaction videos, with equations to recall and notes to memorize.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Fume Hood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&amp;display=swap">
+<style>
+:root {
+  /* Layout: one full-height snap feed; each short = black video stage + reagent-label card (side by side from 960px). Single dark look, like peering into a hood. */
+  --bg: #0b0e0f;
+  --panel: #12181a;
+  --panel-2: #192124;
+  --line: #273235;
+  --fg: #e6ece9;
+  --muted: #8d9d9a;
+  --known: #7dd39e;
+  --review: #f2b24c;
+  --rx: #8fd3c8;
+  --display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --eq: "STIX Two Text", "Cambria Math", Cambria, "Times New Roman", serif;
+  --ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { height: 100%; background: var(--bg); }
+body { height: 100%; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--ui); overflow: hidden; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+sub, sup { font-size: 0.68em; line-height: 0; }
+sub { vertical-align: -0.28em; }
+sup { vertical-align: 0.5em; }
+
+.app { height: 100%; display: flex; flex-direction: column; }
+
+/* ── header */
+.top {
+  flex: none; position: relative; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+  padding-block: 10px 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.bar { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.home {
+  display: inline-flex; align-items: center; gap: 2px; flex: none; height: 30px; padding: 0 8px 0 4px; margin-right: -2px;
+  border: 1px solid var(--line); border-radius: 8px; text-decoration: none; color: var(--muted); font: 500 12px/1 var(--mono);
+}
+.home svg { width: 16px; height: 16px; }
+.home:hover { color: var(--fg); border-color: var(--muted); }
+.brand { display: flex; align-items: center; gap: 8px; text-decoration: none; flex: none; }
+.brand svg { width: 22px; height: 22px; color: var(--fg); }
+.brand span { font: 800 23px/1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; }
+.count { font: 500 12px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tally { display: flex; gap: 10px; font: 500 12px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tally .k { color: var(--known); }
+.tally .r { color: var(--review); }
+.tools { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.tbtn {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.tbtn svg { width: 14px; height: 14px; }
+.tbtn[aria-pressed="true"] { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+.tbtn:hover { border-color: var(--muted); }
+.chips { display: flex; gap: 6px; margin-top: 9px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  font: 500 13px/1 var(--ui); color: var(--muted); cursor: pointer; white-space: nowrap;
+}
+.chip b { font: 500 11px/1 var(--mono); margin-left: 5px; opacity: 0.75; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.chip.rev[aria-pressed="false"] b { color: var(--review); opacity: 1; }
+
+/* ── feed */
+.feed { flex: 1 1 auto; min-height: 0; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+.feed::-webkit-scrollbar { display: none; }
+.short { height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; position: relative; }
+
+.stage {
+  --glow: color-mix(in oklab, var(--rx) 30%, transparent);
+  position: relative; flex: 1 1 auto; min-height: 36%; overflow: hidden; cursor: pointer;
+  background-color: #040506;
+  background-image: radial-gradient(70% 55% at 50% 52%, var(--glow), transparent 78%);
+}
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.badge {
+  position: absolute; top: 12px; left: max(12px, env(safe-area-inset-left, 0px)); padding: 4px 8px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.18);
+  font: 500 10.5px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: #f2f5f4;
+}
+.pause {
+  position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.25);
+  opacity: 0; transform: scale(0.9); transition: opacity 0.18s, transform 0.18s; pointer-events: none;
+}
+.pause svg { width: 26px; height: 26px; margin-left: 4px; fill: #fff; }
+.short.paused .pause { opacity: 1; transform: none; }
+.rail {
+  position: absolute; right: max(10px, env(safe-area-inset-right, 0px)); bottom: 48px;
+  display: flex; flex-direction: column; gap: 12px; align-items: center;
+}
+.rbtn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer;
+  font: 500 11px/1 var(--ui); color: #f2f5f4; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.rbtn i {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(20, 26, 28, 0.62); border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.rbtn svg { width: 21px; height: 21px; }
+.rbtn:active i { transform: scale(0.92); }
+.rbtn.known[aria-pressed="true"] i { background: var(--known); color: #0b1a10; border-color: var(--known); }
+.rbtn.review[aria-pressed="true"] i { background: var(--review); color: #241703; border-color: var(--review); }
+.rbtn.sound .on { display: none; }
+body.sound-on .rbtn.sound .on { display: block; }
+body.sound-on .rbtn.sound .off { display: none; }
+.credit {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 13px; max-width: calc(100% - 90px);
+  font: 500 10.5px/1.3 var(--mono); color: rgba(240, 244, 243, 0.78); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.credit:hover { color: #fff; text-decoration: underline; }
+.stage.is-yt { cursor: default; }
+.yt { position: absolute; inset: 0; background: #000 center / contain no-repeat; }
+.yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.ytfail {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 80%; padding: 10px 14px; border-radius: 10px;
+  background: rgba(0, 0, 0, 0.75); color: #fff; text-align: center; font-size: 14px;
+}
+.khead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.crail { display: flex; gap: 6px; flex: none; }
+.crail .rbtn {
+  flex-direction: row; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel-2); color: var(--fg); text-shadow: none; font-size: 12.5px;
+}
+.crail .rbtn i { width: 26px; height: 26px; background: transparent; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.crail .rbtn svg { width: 16px; height: 16px; }
+.crail .rbtn.known[aria-pressed="true"] { border-color: var(--known); }
+.crail .rbtn.review[aria-pressed="true"] { border-color: var(--review); }
+.crail .rbtn.known[aria-pressed="true"] i { background: var(--known); }
+.crail .rbtn.review[aria-pressed="true"] i { background: var(--review); }
+.prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.12); }
+.prog i { display: block; height: 100%; background: var(--rx); transform-origin: left; transform: scaleX(0); }
+
+/* ── card */
+.card {
+  flex: 0 1 auto; max-height: 64%; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--panel); border-top: 2px solid var(--rx);
+  padding-block: 12px 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 9px;
+}
+.kicker { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 500 10.5px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
+.kicker .tp { color: color-mix(in oklab, var(--rx) 62%, #ffffff); }
+.title { margin: 0; font: 800 29px/0.98 var(--display); text-transform: uppercase; letter-spacing: 0.015em; text-wrap: balance; }
+.nick { margin: -4px 0 0; font-style: italic; color: var(--muted); font-size: 14px; }
+.eq {
+  font: 400 20px/1.55 var(--eq); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 12px; overflow-x: auto; overflow-y: hidden; min-width: 0;
+}
+.st { font-size: 0.6em; color: var(--muted); font-family: var(--ui); margin-left: 0.08em; vertical-align: 0.05em; }
+.arr { display: inline-flex; flex-direction: column; align-items: center; margin: 0 0.35em; vertical-align: middle; line-height: 1; }
+.arr small { font: 400 11px/1 var(--ui); color: var(--muted); margin-bottom: 1px; }
+.arr b { font-weight: 400; color: color-mix(in oklab, var(--rx) 55%, #ffffff); }
+.reveal {
+  display: none; cursor: pointer; vertical-align: middle; margin: 2px 0; padding: 5px 11px; border-radius: 999px;
+  background: transparent; border: 1.5px dashed color-mix(in oklab, var(--rx) 70%, #ffffff); color: var(--fg);
+  font: 500 13px/1.2 var(--ui);
+}
+body.quiz .short:not(.revealed) .rhs { display: none; }
+body.quiz .short:not(.revealed) .reveal { display: inline-block; }
+.pairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 6px; }
+.pair { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); min-width: 0; }
+.pair .ion { font: 400 18px/1 var(--eq); min-width: 2.4em; }
+.pair .sw { width: 14px; height: 14px; border-radius: 50%; flex: none; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.pair .nm { font-size: 13px; color: var(--fg); }
+.pair .q { display: none; font: 500 12px/1 var(--mono); color: var(--muted); }
+body.quiz .short:not(.revealed) .pair .sw, body.quiz .short:not(.revealed) .pair .nm { display: none; }
+body.quiz .short:not(.revealed) .pair .q { display: inline; }
+.lbl { display: block; font: 500 10px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 2px; }
+.see { margin: 0; font-size: 14.5px; }
+.notes { display: flex; flex-direction: column; gap: 10px; }
+.notes p { margin: 0; }
+.why { font-size: 14.5px; color: #cdd6d3; max-width: 62ch; }
+.mem { font-size: 15px; font-weight: 500; padding-top: 9px; border-top: 1px dotted var(--line); }
+.mem .lbl { color: color-mix(in oklab, var(--rx) 62%, #ffffff); }
+.more { display: flex; flex-direction: column; gap: 7px; }
+.more .m { font: 400 16.5px/1.5 var(--eq); overflow-x: auto; overflow-y: hidden; }
+.more .m .ml { display: block; font: 500 11.5px/1.3 var(--ui); color: var(--muted); }
+.src { font-size: 12px; color: var(--muted); }
+.src a { color: var(--fg); }
+.f { white-space: nowrap; font-family: var(--eq); font-size: 1.06em; }
+.title .f, .nick .f { font-family: inherit; font-size: inherit; text-transform: none; }
+.ntoggle {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; background: none; border: 0; cursor: pointer;
+  font: 500 11px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--fg);
+}
+.ntoggle svg { width: 12px; height: 12px; transition: transform 0.15s; }
+.short.open .ntoggle svg { transform: rotate(180deg); }
+.locked { display: none; font-size: 13px; color: var(--muted); font-style: italic; }
+body.quiz .short:not(.revealed) .notes, body.quiz .short:not(.revealed) .ntoggle { display: none; }
+body.quiz .short:not(.revealed) .locked { display: block; }
+
+@media (max-width: 959px) {
+  .notes { display: none; }
+  .short.open .notes { display: flex; }
+  body.quiz .short:not(.revealed).open .notes { display: none; }
+}
+
+/* end / empty cards */
+.short.end { align-items: center; justify-content: center; text-align: center; padding-inline: max(24px, env(safe-area-inset-left, 0px)); gap: 14px; }
+.end h2 { margin: 0; font: 800 40px/0.95 var(--display); text-transform: uppercase; text-wrap: balance; }
+.end p { margin: 0; color: var(--muted); max-width: 44ch; }
+.end .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.end .tbtn { height: 36px; padding: 0 14px; }
+.keys { font: 500 11px/1.8 var(--mono); color: var(--muted); }
+.keys kbd { font: inherit; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--fg); }
+
+/* desktop arrows */
+.arrows { display: none; }
+
+@media (min-width: 960px) {
+  .short:not(.end) {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 400px); gap: 20px;
+    padding-block: 18px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(84px, env(safe-area-inset-right, 0px));
+    max-width: 1320px; margin-inline: auto;
+  }
+  .stage { min-height: 0; border-radius: 16px; }
+  .card { max-height: none; border: 1px solid var(--line); border-top: 3px solid var(--rx); border-radius: 16px; padding: 18px 20px; gap: 11px; }
+  .title { font-size: 38px; }
+  .eq { font-size: 22px; }
+  .ntoggle { display: none !important; }
+  .arrows {
+    display: flex; flex-direction: column; gap: 10px; position: fixed; z-index: 6; top: 50%; transform: translateY(-50%);
+    right: max(18px, env(safe-area-inset-right, 0px));
+  }
+  .arrows button {
+    width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .arrows button:hover { border-color: var(--muted); }
+  .arrows svg { width: 20px; height: 20px; }
+}
+@media (max-width: 420px) {
+  .tally { display: none; }
+  .title { font-size: 26px; }
+  .eq { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pause, .rbtn i, .ntoggle svg { transition: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="bar">
+      <a class="home" id="home" href="/" hidden aria-label="Back to the blog"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg><span>blog</span></a>
+      <a class="brand" href="#top" id="brand" aria-label="Fume Hood: back to the first reaction">
+        <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 12.5h18"></path><path d="M8 9V6.5M12 9V6.5M16 9V6.5"></path><path d="M6.5 6.5 8 5l1.5 1.5M10.5 6.5 12 5l1.5 1.5M14.5 6.5 16 5l1.5 1.5"></path></svg>
+        <span>Fume Hood</span>
+      </a>
+      <span class="count" id="count" aria-live="polite"></span>
+      <span class="tally" id="tally"></span>
+      <div class="tools">
+        <button class="tbtn" id="quizBtn" type="button" aria-pressed="true" title="Hide products until you tap (R)">Quiz</button>
+        <button class="tbtn" id="shuffleBtn" type="button" aria-pressed="false" title="Shuffle the order" aria-label="Shuffle">
+          <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+        </button>
+      </div>
+    </div>
+    <nav class="chips" id="chips" aria-label="Topics"></nav>
+  </header>
+  <main class="feed" id="feed" tabindex="-1"></main>
+  <div class="arrows">
+    <button type="button" id="prevBtn" aria-label="Previous reaction"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"></path></svg></button>
+    <button type="button" id="nextBtn" aria-label="Next reaction"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+  </div>
+</div>
+
+<script>
+const DATA = {"topics":[["sblock","s-Block"],["redox","Redox"],["fire","Fire & Synthesis"],["oxygen","Peroxides & O₂"],["precip","Precipitation"],["complex","Complexes & Color"],["gas","Acids, Bases & Gases"],["equil","Equilibria & Clocks"]],"reactions":[{"id":"li-water","topic":"sblock","types":["redox","gas evolution"],"title":"Lithium + water","nick":"The slow one in group 1","color":"#e0314b","colorName":"lithium crimson","eq":{"l":"2Li(s) + 2H2O(l)","r":"2LiOH(aq) + H2(g)"},"more":[{"label":"The gas is lit at the mouth of the tube","l":"2H2(g) + O2(g)","r":"2H2O(g)"}],"see":"Steady fizzing in the tube. The gas pops when lit, with a crimson tinge from lithium.","why":"Lithium has the most negative standard potential in group 1 ({Li^+}/Li, E° = −3.04 V), yet it reacts the most gently. Thermodynamics tells you how far a reaction goes, not how fast. Lithium stays solid (mp 180 °C), so its surface area stays small, and it has the highest ionization energy in the group.","remember":"Li is the strongest reductant on paper and the slowest in water. Kinetics, not thermodynamics.","speed":1,"credit":{"artist":"Карас Студио","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:35._%D0%A0%D0%B5%D0%B0%D0%BA%D1%86%D0%B8%D1%98%D0%B0_%D0%BD%D0%B0_%D0%BB%D0%B8%D1%82%D0%B8%D1%83%D0%BC_%D1%81%D0%BE_%D0%B2%D0%BE%D0%B4%D0%B0.ogv"}},{"id":"na-water","topic":"sblock","types":["redox","gas evolution"],"title":"Sodium + water","nick":"With phenolphthalein","color":"#ff4fa3","colorName":"phenolphthalein pink","eq":{"l":"2Na(s) + 2H2O(l)","r":"2NaOH(aq) + H2(g)"},"see":"A molten silver bead skates across the surface and leaves a pink trail behind it.","why":"The reaction gives off enough heat to melt sodium (mp 98 °C) into a ball, and escaping {H2} pushes it around. Phenolphthalein turns pink above pH ≈ 8.2, so the trail marks exactly where {OH^-} is being made.","remember":"Pink trail = {OH^-} forming wherever the sodium has been.","speed":1,"credit":{"artist":"W. Oelen","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0","page":"https://commons.wikimedia.org/wiki/File:Sodium_skirting_over_Water_with_few_drops_of_Phenolphthalein_solution_added.webm"}},{"id":"k-water","topic":"sblock","types":["redox","gas evolution"],"title":"Potassium + water","nick":"Lights its own hydrogen","color":"#b48cff","colorName":"potassium lilac","eq":{"l":"2K(s) + 2H2O(l)","r":"2KOH(aq) + H2(g)"},"see":"Each piece bursts into a lilac-pink flame, races around, and finishes with a small pop.","why":"Potassium's outer electron is farther from the nucleus than sodium's, so it's easier to remove (first ionization energy 419 vs 496 kJ/mol). The reaction is faster and hot enough to ignite the hydrogen it releases. Potassium atoms in the flame give the lilac colour.","remember":"K ignites its own {H2}. Lilac flame = potassium.","speed":1,"credit":{"artist":"Maxim Bilovitskiy","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Potassium_metal_in_water.webm"}},{"id":"cs-water","topic":"sblock","types":["redox","gas evolution"],"title":"Caesium + water","nick":"Bottom of group 1","color":"#ffc14d","colorName":"hydrogen flash","eq":{"l":"2Cs(s) + 2H2O(l)","r":"2CsOH(aq) + H2(g)"},"see":"A violent burst the instant the metal touches water, with burning hydrogen.","why":"Caesium has the lowest first ionization energy of any stable element (376 kJ/mol) and melts at 28 °C. It reacts on contact and explosively, and {CsOH} is among the strongest hydroxide bases.","remember":"Reactivity climbs down group 1: Li \u003c Na \u003c K \u003c Rb \u003c Cs.","speed":1,"credit":{"artist":"Philip Evans","license":"CC BY-SA 3.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/3.0","page":"https://commons.wikimedia.org/wiki/File:Cesium_water.theora.ogv"}},{"id":"ca-water","topic":"sblock","types":["redox","gas evolution"],"title":"Calcium + water","nick":"Group 2 is gentler","color":"#cfd8da","colorName":"milky white","eq":{"l":"Ca(s) + 2H2O(l)","r":"Ca(OH)2(s) + H2(g)"},"see":"The granules bubble steadily and the water turns cloudy white.","why":"Group 2 metals must lose two electrons, so they react more slowly than their group 1 neighbours. The cloudiness is calcium hydroxide, which is only sparingly soluble (about 1.7 g/L at 20 °C). The clear solution above it is limewater.","remember":"Cloudy = {Ca(OH)2} that barely dissolves. Its clear solution is limewater.","speed":1,"credit":{"artist":"François Nguyen","license":"CC BY 2.0","licenseUrl":"https://creativecommons.org/licenses/by/2.0","page":"https://commons.wikimedia.org/wiki/File:About_1_gram_of_metallic_calcium_reacts_with_warm_water.webm"}},{"id":"na-cl2","topic":"sblock","types":["redox","synthesis"],"title":"Sodium + chlorine","nick":"Making table salt","color":"#ffb52e","colorName":"sodium D-line yellow","eq":{"l":"2Na(s) + Cl2(g)","r":"2NaCl(s)"},"see":"Hot sodium lowered into pale green chlorine glows yellow-orange and gives off white smoke.","why":"Sodium gives up its 3s electron and chlorine accepts it. Ionizing sodium alone costs energy; the payoff is the lattice energy of {NaCl} (about 787 kJ/mol). Overall ΔH_f° = −411 kJ/mol. The yellow glow is sodium's 589 nm emission.","remember":"Toxic metal + toxic gas → table salt. Lattice energy pays the bill (Born–Haber cycle).","speed":1,"credit":{"artist":"ScienceCOLA","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Reaction_between_Sodium_and_Chlorine.webm"}},{"id":"mg-o2","topic":"sblock","types":["redox","combustion"],"title":"Magnesium + oxygen","nick":"Burning in pure {O2}","color":"#eef1ff","colorName":"blinding white","eq":{"l":"2Mg(s) + O2(g)","r":"2MgO(s)"},"see":"A dazzling white flame, much brighter in pure oxygen than in air, leaving white ash.","why":"Forming MgO releases about 601 kJ/mol. The flame is hot enough that MgO particles glow white-hot, and a lot of the light is ultraviolet. Pure {O2} raises the reactant concentration, so the rate jumps.","remember":"White ash = {MgO}, a basic oxide. Never stare at burning magnesium (UV).","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:108._%D0%93%D0%BE%D1%80%D0%B5%D1%9A%D0%B5_%D0%BD%D0%B0_%D0%BC%D0%B0%D0%B3%D0%BD%D0%B5%D0%B7%D0%B8%D1%83%D0%BC_%D0%B2%D0%BE_%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%80%D0%BE%D0%B4.webm"}},{"id":"mg-water","topic":"sblock","types":["redox","combustion"],"title":"Burning magnesium + water","nick":"Fire that water feeds","color":"#eef1ff","colorName":"magnesium white","eq":{"l":"Mg(s) + H2O(g)","r":"MgO(s) + H2(g)"},"see":"Burning magnesium plunged into a flask of water keeps burning brilliantly.","why":"Cold water attacks magnesium only slowly, but burning magnesium is hot enough to strip oxygen from steam, and the hydrogen produced can burn too. That is why water, and even {CO2}, must never be used on a metal fire. Dry sand or a class D extinguisher is used instead.","remember":"Burning Mg takes O from water. Never use water on a metal fire.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:68._%D0%93%D0%BE%D1%80%D0%B5%D1%9A%D0%B5_%D0%BC%D0%B0%D0%B3%D0%BD%D0%B5%D0%B7%D0%B8%D1%83%D0%BC_%D0%BF%D0%BE%D0%B4_%D0%B2%D0%BE%D0%B4%D0%B0.ogg"}},{"id":"flame-tests","topic":"sblock","types":["emission","analysis"],"title":"Metal ions in a flame","nick":"Flame tests","color":"#ff6a3d","colorName":"flame colours","pairs":[["K^+","lilac","#b48cff"],["Ba^2+","pale green","#a6e36a"],["Ca^2+","brick red","#e2552b"],["Sr^2+","scarlet red","#ff2b2b"],["Li^+","crimson red","#d4213d"],["Na^+","yellow-orange","#ffb52e"],["Cu^2+","blue-green","#2fd3b5"]],"see":"A wire dipped in each salt colours the burner flame: K, Ba, Ca, Sr, Li, Na, then Cu.","why":"Heat promotes electrons to higher energy levels. As they fall back, they emit photons whose energies are set by each element's own level spacings, so every metal gives a signature colour. Sodium's 589 nm emission is so strong it masks others; potassium is viewed through cobalt-blue glass to filter it out.","remember":"Li crimson · Na orange · K lilac · Ca brick red · Sr red · Ba green · Cu blue-green.","speed":2,"credit":{"artist":"North Carolina School of Science and Mathematics","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Flame_Tests_of_Metal_Ions,_With_Labels.webm"}},{"id":"rb-water","topic":"sblock","types":["redox","gas evolution"],"yt":{"id":"vcT7qxFGD6s","start":3,"end":30,"author":"Periodic Videos"},"title":"Rubidium + water","nick":"It sinks, then explodes","color":"#ff9a3c","colorName":"hydrogen fireball","eq":{"l":"2Rb(s) + 2H2O(l)","r":"2RbOH(aq) + H2(g)"},"see":"A small piece of rubidium dropped into a tank of water explodes almost at once.","why":"Rubidium loses its 5s electron even more easily than potassium (first ionization energy 403 kJ/mol). It is also denser than water (1.53 g/cm³), so unlike Li, Na and K it sinks and reacts all over its surface at once, releasing hydrogen and heat explosively.","remember":"Li, Na, K float; Rb and Cs sink and explode.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=vcT7qxFGD6s&t=3s"}},{"id":"k-air","topic":"sblock","types":["redox","oxidation"],"yt":{"id":"K-KBrIvRth4","start":9,"end":26,"author":"Royal Society of Chemistry"},"title":"Freshly cut potassium + air","nick":"Tarnishes in seconds","color":"#b48cff","colorName":"potassium lilac","eq":{"l":"4K(s) + O2(g)","r":"2K2O(s)"},"more":[{"label":"With more oxygen, the superoxide forms","l":"K(s) + O2(g)","r":"KO2(s)"}],"see":"The knife reveals a shiny silver surface that dulls over within seconds.","why":"Potassium gives up its outer electron so readily that it reacts with oxygen and moisture in air almost instantly, coating the fresh surface with oxide. That is why group 1 metals are stored under oil. Heavier alkali metals tend to form peroxides and superoxides (Na₂O₂, KO₂) rather than simple oxides.","remember":"Shiny for a moment, dull in seconds. Alkali metals live under oil.","credit":{"artist":"Royal Society of Chemistry","license":"YouTube","page":"https://www.youtube.com/watch?v=K-KBrIvRth4&t=9s"}},{"id":"mg-co2","topic":"sblock","types":["redox","combustion"],"yt":{"id":"NMZT2BAEtnc","start":3,"end":28,"author":"Periodic Videos"},"title":"Burning magnesium + dry ice","nick":"CO₂ can’t put it out","color":"#eef1ff","colorName":"magnesium white","eq":{"l":"2Mg(s) + CO2(s)","r":"2MgO(s) + C(s)"},"see":"Burning magnesium placed inside a block of dry ice keeps blazing, lighting the block from within.","why":"Magnesium binds oxygen more strongly than carbon does: forming 2 MgO releases 1203 kJ, while breaking up one CO₂ costs only 394 kJ, so ΔH ≈ −810 kJ. The white product is MgO and the black specks are carbon. This is why carbon dioxide extinguishers must never be used on metal fires.","remember":"White MgO + black carbon. Mg steals oxygen even from CO₂.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=NMZT2BAEtnc&t=3s"}},{"id":"na-nh3","topic":"sblock","types":["redox","solvated electrons"],"yt":{"id":"kNC56EljJ7k","start":68,"end":104,"author":"Royal Society of Chemistry"},"title":"Sodium + liquid ammonia","nick":"Electrons in a bottle","color":"#2b3fd8","colorName":"solvated-electron blue","eq":{"l":"Na(s)","r":"Na^+(am) + e^-(am)","over":"NH3(l), −33 °C"},"more":[{"label":"Slow decomposition (faster with an iron catalyst)","l":"2Na(s) + 2NH3(l)","r":"2NaNH2(s) + H2(g)"}],"see":"Sodium dropped into liquid ammonia turns it an inky blue-black.","why":"Sodium ionizes in liquid ammonia, and the freed electron sits in a cavity of ammonia molecules: a solvated electron. It absorbs red and near-infrared light, so the solution looks deep blue. Concentrated solutions turn bronze and conduct electricity like a metal. These electrons are powerful reductants, used in the Birch reduction.","remember":"Blue = solvated electrons. Concentrated = bronze and metallic.","credit":{"artist":"Royal Society of Chemistry","license":"YouTube","page":"https://www.youtube.com/watch?v=kNC56EljJ7k&t=68s"}},{"id":"cu-agno3","topic":"redox","types":["redox","single displacement"],"title":"Copper + silver nitrate","nick":"Silver tree","color":"#3fa7e8","colorName":"copper(II) blue","eq":{"l":"Cu(s) + 2AgNO3(aq)","r":"Cu(NO3)2(aq) + 2Ag(s)"},"more":[{"label":"Net ionic","l":"Cu(s) + 2Ag^+(aq)","r":"Cu^2+(aq) + 2Ag(s)"}],"see":"Close up: feathery, glittering silver crystals spread across the copper. The solution slowly turns blue.","why":"{Ag^+} is a stronger oxidizing agent than {Cu^2+} (E° = +0.80 V vs +0.34 V), so copper hands its electrons to silver ions. E°cell = +0.46 V, which is positive, so the reaction is spontaneous. The blue colour is hydrated {Cu^2+}.","remember":"A metal displaces any metal less reactive than itself. Cu beats Ag.","speed":1,"credit":{"artist":"Bilovitskiy","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Silver.webm"}},{"id":"fe-cuso4","topic":"redox","types":["redox","single displacement"],"title":"Iron + copper(II) sulfate","nick":"Free copper plating","color":"#d9774a","colorName":"copper pink","eq":{"l":"Fe(s) + CuSO4(aq)","r":"FeSO4(aq) + Cu(s)"},"more":[{"label":"Net ionic","l":"Fe(s) + Cu^2+(aq)","r":"Fe^2+(aq) + Cu(s)"}],"see":"Steel wool in blue copper sulfate (sped up) grows a red-brown copper coat while the blue fades.","why":"Iron is more reactive than copper (E° Fe²⁺/Fe = −0.44 V, Cu²⁺/Cu = +0.34 V), so iron reduces copper ions to the metal and dissolves as {Fe^2+}. E°cell = +0.78 V. The blue fades as {Cu^2+} is used up and pale green {Fe^2+} replaces it.","remember":"Blue fades, copper coats the iron. Used historically to recover copper from mine water.","speed":2.5,"credit":{"artist":"Hugo","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Reaction_of_copper_sulfate_with_iron.webm"}},{"id":"metals-hcl","topic":"redox","types":["redox","gas evolution"],"title":"{Cu}, {Fe}, {Zn}, {Mg} + hydrochloric acid","nick":"Activity series in four tubes","color":"#b9c4c7","colorName":"hydrogen bubbles","eq":{"l":"M(s) + 2HCl(aq)","r":"MCl2(aq) + H2(g)"},"more":[{"label":"Magnesium (fastest)","l":"Mg(s) + 2HCl(aq)","r":"MgCl2(aq) + H2(g)"},{"label":"Copper","l":"Cu(s) + HCl(aq)","r":"no reaction"}],"see":"Copper does nothing, iron bubbles slowly, zinc steadily, and magnesium foams furiously.","why":"Only metals with negative standard potentials can reduce {H^+} to {H2}. Copper (+0.34 V) cannot. Among the others, the rate order Mg > Zn > Fe follows how negative their potentials are (−2.37, −0.76 and −0.44 V), though oxide layers and surface area matter too.","remember":"Above hydrogen in the activity series → fizzes in acid. Cu, Ag and Au don't.","speed":2,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:64._%D0%A5%D0%BB%D0%BE%D1%80%D0%BE%D0%B2%D0%BE%D0%B4%D0%BE%D1%80%D0%BE%D0%B4%D0%BD%D0%B0_%D0%BA%D0%B8%D1%81%D0%B5%D0%BB%D0%B8%D0%BD%D0%B0_%D1%81%D0%BE_%D1%80%D0%B0%D0%B7%D0%BB%D0%B8%D1%87%D0%BD%D0%B8_%D0%BC%D0%B5%D1%82%D0%B0%D0%BB%D0%B8.ogg"}},{"id":"zn-brass","topic":"redox","types":["redox","amphoterism"],"title":"Copper coin + zinc in hot {NaOH}","nick":"Copper → \"silver\" → \"gold\"","color":"#d4a640","colorName":"brass gold","eq":{"l":"Zn(s) + 2OH^-(aq) + 2H2O(l)","r":"[Zn(OH)4]^2-(aq) + H2(g)"},"more":[{"label":"Zinc plates out on copper touching the zinc","l":"[Zn(OH)4]^2-(aq) + 2e^-","r":"Zn(s) + 4OH^-(aq)"},{"label":"Heated in a flame","l":"Cu + Zn","r":"brass (Cu–Zn alloy)"}],"see":"A copper coin turns silver in hot alkaline zinc, then gold when heated in a flame.","why":"Zinc is amphoteric: it dissolves in hot sodium hydroxide as zincate. Where the coin touches zinc metal, the pair forms a galvanic cell and zinc deposits on the copper surface. Heating lets zinc atoms diffuse into the copper, forming brass, a golden alloy. No real silver or gold is involved.","remember":"Zn is amphoteric: it dissolves in acids and in strong bases (as zincate).","speed":2,"credit":{"artist":"ScienceCOLA","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Zinc-plating_and_the_formation_of_brass_-_turning_Copper_into_%22Silver%22_and_%22Gold%22.webm"}},{"id":"hg-heart","topic":"redox","types":["redox","electrochemistry"],"title":"Mercury + iron nail in acidic oxidant","nick":"Mercury beating heart","color":"#c8cdd2","colorName":"mercury silver","eq":{"l":"2Hg(l) + SO4^2-(aq)","r":"Hg2SO4(film) + 2e^-"},"more":[{"label":"Iron touches the drop and supplies electrons","l":"Fe(s)","r":"Fe^2+(aq) + 2e^-"}],"see":"The blob of mercury pulses: it flattens, touches the nail, snaps back into a rounder drop, and repeats.","why":"Mercury's surface tension depends on the charge on its surface. The oxidant (often dichromate or peroxide in sulfuric acid) builds a mercury(I) film, surface tension drops and the drop spreads until it touches the iron. Iron then feeds in electrons, the film is reduced, surface tension rises, and the drop pulls back and breaks contact. The cycle repeats.","remember":"Oxidize → flatten → touch Fe → reduce → contract. A redox oscillator you can see.","speed":1,"credit":{"artist":"Дени Ингилизовски","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:89._%D0%96%D0%B8%D0%B2%D0%B8%D0%BD%D0%BE_%D1%81%D1%80%D1%86%D0%B5.ogg"}},{"id":"kmno4-chameleon","topic":"redox","types":["redox","oxidation states"],"title":"Permanganate + sugar in base","nick":"Chemical chameleon","color":"#3fbf6a","colorName":"manganate green","eq":{"l":"MnO4^-(aq) + e^-","r":"MnO4^2-(aq)"},"more":[{"label":"Then","l":"MnO4^2-(aq) + 2H2O(l) + 2e^-","r":"MnO2(s) + 4OH^-(aq)"}],"see":"Purple turns blue, then green, then yellow-orange as the sugar works.","why":"In alkaline solution, glucose reduces manganese one stage at a time: purple permanganate (+7) → green manganate (+6) → orange-brown colloidal manganese dioxide (+4). The blue stage is purple and green mixing. In acid, permanganate goes straight to almost colourless {Mn^2+} instead.","remember":"Purple +7 → green +6 → brown +4. In acid: straight to pale pink {Mn^2+}.","speed":1.5,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:59._%D0%9A%D0%B0%D0%BC%D0%B5%D0%BB%D0%B5%D0%BE%D0%BD_%D1%81%D0%BE_%D0%BB%D0%B8%D0%B6%D0%B0%D0%B2%D1%87%D0%B5.ogg"}},{"id":"vanadium","topic":"redox","types":["redox","oxidation states"],"title":"Vanadium(V) + Devarda’s alloy","nick":"Chemical tea","color":"#8a5cff","colorName":"vanadium(II) violet","eq":{"l":"VO2^+(aq) + 2H^+(aq) + e^-","r":"VO^2+(aq) + H2O(l)"},"more":[{"label":"+4 → +3","l":"VO^2+(aq) + 2H^+(aq) + e^-","r":"V^3+(aq) + H2O(l)"},{"label":"+3 → +2","l":"V^3+(aq) + e^-","r":"V^2+(aq)"},{"label":"Electron source (mostly aluminium)","l":"Al(s)","r":"Al^3+(aq) + 3e^-"}],"see":"A \"tea bag\" of reducing alloy steeps in the hot solution, which runs from red-brown through green, blue and teal to violet.","why":"Each colour is a different oxidation state of vanadium. Devarda's alloy (aluminium, copper and a little zinc) is a strong enough reductant (E° Al³⁺/Al = −1.66 V) to take vanadium all the way from +5 to +2. The opening red-brown colour is a vanadium(V) peroxo complex formed with added {H2O2}.","remember":"Yellow +5 · Blue +4 · Green +3 · Violet +2.","speed":1.5,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:125._%D0%A5%D0%B5%D0%BC%D0%B8%D1%81%D0%BA%D0%B8_%D1%87%D0%B0%D1%98_(%D0%BE%D0%BA%D1%81%D0%B8%D0%B4%D0%B0%D1%86%D0%B8%D1%81%D0%BA%D0%B8_%D1%81%D0%BE%D1%81%D1%82%D0%BE%D1%98%D0%B1%D0%B8_%D0%BD%D0%B0_%D0%B2%D0%B0%D0%BD%D0%B0%D0%B4%D0%B8%D1%83%D0%BC%D0%BE%D1%82).webm"}},{"id":"kmno4-glycerol","topic":"redox","types":["redox","combustion"],"title":"Potassium permanganate + glycerol","nick":"Delayed fire","color":"#b03fd6","colorName":"permanganate purple","eq":{"l":"14KMnO4(s) + 4C3H5(OH)3(l)","r":"7K2CO3(s) + 7Mn2O3(s) + 5CO2(g) + 16H2O(g)"},"see":"Glycerol is dripped onto a mound of ground permanganate. Nothing happens for a while, then it smokes and bursts into flame.","why":"Permanganate is a powerful oxidizer and glycerol is the fuel. The reaction begins slowly at the crystal surfaces, but the heat it releases speeds it up, which releases more heat. This feedback, thermal runaway, explains the delay. The violet tint comes from potassium.","remember":"The delay is an induction period: heat speeds the reaction, and the reaction makes more heat.","speed":1,"credit":{"artist":"ScienceCOLA","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Reaction_between_potassium_permanganate_and_glycerol.webm"}},{"id":"mn2o7","topic":"redox","types":["redox","acid anhydride"],"title":"Permanganate + conc. sulfuric acid, then ethanol","nick":"Ignites on contact","color":"#6b8f3a","colorName":"oily dark green","eq":{"l":"2KMnO4(s) + H2SO4(l)","r":"Mn2O7(l) + K2SO4(s) + H2O(l)"},"more":[{"label":"A drop of ethanol","l":"2Mn2O7(l) + C2H5OH(l)","r":"4MnO2(s) + 2CO2(g) + 3H2O(g)"}],"see":"Each drop of ethanol landing on the dark paste bursts into flame.","why":"Concentrated sulfuric acid pulls water out of permanganate, forming {Mn2O7}: the acid anhydride of permanganic acid, with manganese at +7. It is such a strong oxidizer that organic matter ignites on touching it. Pure {Mn2O7} can explode, so this is strictly a demonstration.","remember":"{Mn2O7} is the anhydride of {HMnO4}. Mn(+7) + any fuel = instant fire.","speed":1,"credit":{"artist":"Maxim Bilovitskiy","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Manganese_oxide_7_and_ethanol.webm"}},{"id":"dispro","topic":"redox","types":["redox","decomposition"],"title":"Ammonium dichromate, ignited","nick":"Chemical volcano","color":"#4f8f3f","colorName":"chromium(III) oxide green","eq":{"l":"(NH4)2Cr2O7(s)","r":"Cr2O3(s) + N2(g) + 4H2O(g)"},"see":"Orange crystals glow and throw sparks, swelling into a heap of fluffy dark green ash.","why":"The ammonium ion is the reducing agent and dichromate the oxidizing agent, packed into one solid. Nitrogen goes from −3 to 0 and chromium from +6 to +3. Escaping {N2} and steam puff up the {Cr2O3}. Strictly, this is an intramolecular redox reaction rather than a disproportionation, which needs one element to go both up and down. Chromium(VI) compounds are carcinogenic.","remember":"Orange Cr(+6) → green {Cr2O3} (+3). Fuel and oxidizer in one salt.","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:12._%D0%A0%D0%B5%D0%B0%D0%BA%D1%86%D0%B8%D1%98%D0%B0_%D0%BD%D0%B0_%D0%B4%D0%B8%D1%81%D0%BF%D1%80%D0%BE%D0%BF%D0%BE%D1%80%D1%86%D0%B8%D0%BE%D0%BD%D0%B8%D1%80%D0%B0%D1%9A%D0%B5.webm"}},{"id":"feso4-h2o2","topic":"redox","types":["redox","precipitation"],"title":"Iron(II) sulfate + hydrogen peroxide","nick":"{Fe^2+} to {Fe^3+}","color":"#c58a2a","colorName":"iron(III) yellow-brown","eq":{"l":"2Fe^2+(aq) + H2O2(aq) + 2H^+(aq)","r":"2Fe^3+(aq) + 2H2O(l)"},"see":"The pale green iron(II) solution turns yellow-brown, and rusty iron(III) hydroxide collects at the surface.","why":"{H2O2} is a good oxidizing agent (E° = +1.78 V in acid) and easily oxidizes {Fe^2+} (E° Fe³⁺/Fe²⁺ = +0.77 V). Without enough acid, the iron(III) hydrolyses and rust-coloured iron(III) hydroxide precipitates.","remember":"Pale green Fe²⁺ → yellow-brown Fe³⁺. Peroxide is the oxidant.","speed":1,"credit":{"artist":"FilHru","license":"CC0","licenseUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","page":"https://commons.wikimedia.org/wiki/File:Sr%C3%A1%C5%BEec%C3%AD_reakce_s%C3%ADranu_%C5%BEeleznat%C3%A9ho_s_peroxidem.webm"}},{"id":"ki-electrolysis","topic":"redox","types":["electrolysis"],"title":"Electrolysis of potassium iodide solution","nick":"Which ions get discharged?","color":"#c87a2a","colorName":"iodine brown","eq":{"l":"2I^-(aq)","r":"I2(aq) + 2e^-"},"more":[{"label":"Cathode","l":"2H2O(l) + 2e^-","r":"H2(g) + 2OH^-(aq)"},{"label":"Overall","l":"2I^-(aq) + 2H2O(l)","r":"I2(aq) + H2(g) + 2OH^-(aq)"}],"see":"In the U-tube, the cathode arm turns pink (hydroxide meets phenolphthalein) while the anode arm turns yellow-brown with iodine.","why":"At the anode, iodide is oxidized more easily than water, so brown iodine forms. At the cathode, water is reduced far more easily than {K^+} (E° = −2.93 V), so hydrogen bubbles off and hydroxide is left behind. Potassium metal never appears.","remember":"Anode = oxidation, cathode = reduction. Group 1 cations stay in solution; water is reduced instead.","speed":1.5,"credit":{"artist":"North Carolina School of Science and Mathematics","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Electrolysis_Aqueous_KI_with_Graphite_Electrodes.webm"}},{"id":"cu-hno3","topic":"redox","types":["redox","oxidizing acid"],"yt":{"id":"gw-DE61ltX8","start":8,"end":51,"author":"UC Berkeley"},"title":"Copper + concentrated nitric acid","nick":"The acid that dissolves copper","color":"#b5602d","colorName":"nitrogen dioxide brown","eq":{"l":"Cu(s) + 4HNO3(aq)","r":"Cu(NO3)2(aq) + 2NO2(g) + 2H2O(l)"},"more":[{"label":"With dilute acid","l":"3Cu(s) + 8HNO3(aq)","r":"3Cu(NO3)2(aq) + 2NO(g) + 4H2O(l)"}],"see":"Copper in the acid releases dense red-brown gas that fills the cylinder.","why":"Copper cannot reduce H⁺ (E° Cu²⁺/Cu = +0.34 V), so acids like HCl leave it alone. Nitric acid works because nitrate is the oxidizing agent. Concentrated acid is reduced to brown NO₂ (N +4); dilute acid gives mostly colourless NO (N +2), which turns brown once it meets air. The solution is green while NO₂ is dissolved in it and blue once diluted.","remember":"Cu dissolves in HNO₃ but not HCl: nitrate is the oxidant. Concentrated → NO₂, dilute → NO.","credit":{"artist":"UC Berkeley","license":"YouTube","page":"https://www.youtube.com/watch?v=gw-DE61ltX8&t=8s"}},{"id":"al-cucl2","topic":"redox","types":["redox","single displacement"],"yt":{"id":"gqSXWbS6gzo","start":5,"end":31,"author":"NCSSM"},"title":"Aluminium foil + copper(II) chloride","nick":"Chloride breaks the armour","color":"#d9774a","colorName":"copper red-brown","eq":{"l":"2Al(s) + 3CuCl2(aq)","r":"2AlCl3(aq) + 3Cu(s)"},"more":[{"label":"Side reaction in the acidic solution","l":"2Al(s) + 6H^+(aq)","r":"2Al^3+(aq) + 3H2(g)"}],"see":"The foil fizzes and steams in the blue solution, red-brown copper builds up, and the blue fades.","why":"Aluminium is very reactive (E° = −1.66 V) but normally protected by a tough oxide film. Chloride ions break the film down, which is why foil reacts fast with copper(II) chloride but hardly at all with copper(II) sulfate. Hydrated Cu²⁺ makes the solution slightly acidic, so hydrogen bubbles off too, and the whole thing gets hot.","remember":"CuCl₂ + Al: fast. CuSO₄ + Al: slow. Chloride strips the oxide layer.","credit":{"artist":"NCSSM","license":"YouTube","page":"https://www.youtube.com/watch?v=gqSXWbS6gzo&t=5s"}},{"id":"kmno4-h2o2","topic":"redox","types":["redox","titration"],"yt":{"id":"Kln0v_L5ExE","start":3,"end":27,"author":"Periodic Videos"},"title":"Permanganate + acidified hydrogen peroxide","nick":"Purple vanishes","color":"#b03fd6","colorName":"permanganate purple","eq":{"l":"2MnO4^-(aq) + 5H2O2(aq) + 6H^+(aq)","r":"2Mn^2+(aq) + 5O2(g) + 8H2O(l)"},"see":"Purple permanganate poured into the acidified peroxide loses its colour as it mixes, with bubbles of oxygen.","why":"Here hydrogen peroxide is the reducing agent: its oxygen goes from −1 to 0 as O₂ is released, while manganese drops from +7 to almost colourless Mn²⁺. Because the purple disappears until all the peroxide is used up, permanganate acts as its own indicator in titrations.","remember":"H₂O₂ can be a reductant too. Permanganate is self-indicating.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=Kln0v_L5ExE&t=3s"}},{"id":"cuso4-ki","topic":"redox","types":["redox","precipitation"],"yt":{"id":"SG-lygFJjnw","start":25,"end":68,"author":"Ricky Hu"},"title":"Copper(II) sulfate + potassium iodide","nick":"A precipitate drives the redox","color":"#a8642a","colorName":"iodine brown","eq":{"l":"2CuSO4(aq) + 4KI(aq)","r":"2CuI(s) + I2(aq) + 2K2SO4(aq)"},"more":[{"label":"Net ionic","l":"2Cu^2+(aq) + 4I^-(aq)","r":"2CuI(s) + I2(aq)"}],"see":"Blue copper sulfate poured into clear iodide turns a muddy brown with a pale precipitate.","why":"On standard potentials alone, Cu²⁺ should not oxidize iodide (Cu²⁺/Cu⁺ +0.15 V vs I₂/I⁻ +0.54 V). But copper(I) iodide is extremely insoluble, which removes Cu⁺ and pulls the reaction forward. The brown is iodine; the off-white solid is CuI. This reaction underlies the iodometric determination of copper.","remember":"Cu²⁺ + I⁻ → off-white CuI + brown I₂. The precipitate makes it go.","credit":{"artist":"Ricky Hu","license":"YouTube","page":"https://www.youtube.com/watch?v=SG-lygFJjnw&t=25s"}},{"id":"dichromate","topic":"redox","types":["redox","oxidation states"],"yt":{"id":"MKTZhpdl1eE","start":0,"end":21,"author":"The Real Chemist"},"title":"Acidified dichromate + a reducing agent","nick":"Orange to green","color":"#3f9a52","colorName":"chromium(III) green","eq":{"l":"Cr2O7^2-(aq) + 14H^+(aq) + 6e^-","r":"2Cr^3+(aq) + 7H2O(l)"},"more":[{"label":"With ethanol (the old breathalyser)","l":"Cr2O7^2-(aq) + 3C2H5OH(aq) + 8H^+(aq)","r":"2Cr^3+(aq) + 3CH3CHO(aq) + 7H2O(l)"}],"see":"Orange dichromate solution turns green as it is reduced.","why":"Dichromate holds chromium in the +6 state, which is orange. A reducing agent such as ethanol, SO₂ or Fe²⁺ takes it down to green Cr³⁺, and acid is needed to soak up the oxygen as water. Early roadside breathalysers used this colour change to detect ethanol.","remember":"Orange Cr(+6) → green Cr(+3). Needs acid.","credit":{"artist":"The Real Chemist","license":"YouTube","page":"https://www.youtube.com/watch?v=MKTZhpdl1eE&t=0s"}},{"id":"gold-aqua-regia","topic":"redox","types":["redox","complexation"],"yt":{"id":"ssfTsKMSyVE","start":3,"end":18,"author":"Periodic Videos"},"title":"Gold + aqua regia","nick":"Dissolving the noblest metal","color":"#e8a53a","colorName":"tetrachloroaurate orange","eq":{"l":"Au(s) + HNO3(aq) + 4HCl(aq)","r":"HAuCl4(aq) + NO(g) + 2H2O(l)"},"see":"Gold leaf dropped into the orange 1:3 mix of nitric and hydrochloric acids simply disappears.","why":"Nitric acid alone can barely oxidize gold (E° Au³⁺/Au = +1.50 V). Chloride ions grab any Au³⁺ formed as the very stable [AuCl₄]⁻ complex, which lowers the potential needed to about +1.0 V, within reach of nitrate. Neither acid dissolves gold on its own; together they do.","remember":"HNO₃ oxidizes, Cl⁻ complexes. Neither alone dissolves gold.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=ssfTsKMSyVE&t=3s"}},{"id":"cl2-ki","topic":"redox","types":["redox","halogen displacement"],"yt":{"id":"wKSX3NAkUyM","start":0,"end":20,"author":"Nigel Baldwin"},"title":"Chlorine water + potassium iodide","nick":"Halogen displacement","color":"#c06a1a","colorName":"iodine orange-brown","eq":{"l":"Cl2(aq) + 2KI(aq)","r":"2KCl(aq) + I2(aq)"},"see":"Colourless potassium iodide turns orange-brown as chlorine water is added.","why":"Chlorine is a stronger oxidizing agent than iodine (E° +1.36 vs +0.54 V), so it takes electrons from iodide ions. The iodine formed combines with leftover iodide as I₃⁻, which is brown.","remember":"A halogen displaces any halide below it in group 17.","credit":{"artist":"Nigel Baldwin","license":"YouTube","page":"https://www.youtube.com/watch?v=wKSX3NAkUyM&t=0s"}},{"id":"br2-ki","topic":"redox","types":["redox","halogen displacement"],"yt":{"id":"csAuMNJtnAA","start":0,"end":22,"author":"Nigel Baldwin"},"title":"Bromine water + potassium iodide","nick":"Bromine beats iodine","color":"#a8341f","colorName":"triiodide red-brown","eq":{"l":"Br2(aq) + 2KI(aq)","r":"2KBr(aq) + I2(aq)"},"see":"Pale yellow bromine water turns the potassium iodide solution dark red-brown.","why":"Bromine (E° +1.07 V) is a stronger oxidizer than iodine (+0.54 V), so it oxidizes iodide. It cannot oxidize chloride, because chlorine (+1.36 V) is stronger still.","remember":"Br₂ displaces I⁻ but not Cl⁻.","credit":{"artist":"Nigel Baldwin","license":"YouTube","page":"https://www.youtube.com/watch?v=csAuMNJtnAA&t=0s"}},{"id":"thermite","topic":"fire","types":["redox","single displacement"],"title":"Iron oxide + aluminium","nick":"Thermite","color":"#ff7a1a","colorName":"molten iron orange","eq":{"l":"Fe2O3(s) + 2Al(s)","r":"Al2O3(s) + 2Fe(l)"},"see":"A fierce, sparking burn that leaves a glowing pool of molten metal.","why":"Aluminium's affinity for oxygen is enormous: ΔH_f° of {Al2O3} is −1676 kJ/mol against −824 kJ/mol for {Fe2O3}. Swapping the oxygen releases about 850 kJ per mole of {Fe2O3}, enough to reach roughly 2500 °C and melt the iron. In this clip, extra oxides and fluxes produce a small stainless-steel ingot.","remember":"Aluminothermy: Al steals O from less reactive metal oxides. Used to weld rails.","speed":1,"credit":{"artist":"Bilovitskiy","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Thermite.webm"}},{"id":"al-br2","topic":"fire","types":["redox","synthesis"],"title":"Aluminium + bromine","nick":"Metal meets liquid halogen","color":"#c0502a","colorName":"bromine red-brown","eq":{"l":"2Al(s) + 3Br2(l)","r":"Al2Br6(s)"},"see":"Aluminium in a tube of bromine glows red-hot, then erupts in sparks and smoke.","why":"An oxide skin protects aluminium, so there is a short delay. Once bromine breaks through, the very exothermic reaction makes the metal glow. Aluminium bromide exists as the dimer {Al2Br6}: each aluminium is electron-deficient and borrows a lone pair from a bridging bromine.","remember":"{AlX3} is a Lewis acid, so it dimerizes: {Al2Br6} with bridging Br.","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:01._%D0%94%D0%B8%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D0%B0_%D1%81%D0%B8%D0%BD%D1%82%D0%B5%D0%B7%D0%B0_%D0%BD%D0%B0_%D0%B0%D0%BB%D1%83%D0%BC%D0%B8%D0%BD%D0%B8%D1%83%D0%BC_%D0%B1%D1%80%D0%BE%D0%BC%D0%B8%D0%B4.webm"}},{"id":"al-i2","topic":"fire","types":["redox","synthesis"],"title":"Aluminium + iodine + a drop of water","nick":"Water is the trigger","color":"#9b4bd1","colorName":"iodine violet","eq":{"l":"2Al(s) + 3I2(s)","r":"2AlI3(s)","over":"H2O"},"see":"After a pause, the powder hisses and erupts in a purple cloud.","why":"Dry, the mixture does nothing. A drop of water acts as a catalyst, letting iodine attack the aluminium. Heat builds, the reaction runs away, and the excess iodine sublimes into the purple cloud.","remember":"The purple cloud is leftover {I2} subliming, not the product.","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:06._%D0%94%D0%B8%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D0%B0_%D1%81%D0%B8%D0%BD%D1%82%D0%B5%D0%B7%D0%B0_%D0%BD%D0%B0_%D0%B0%D0%BB%D1%83%D0%BC%D0%B8%D0%BD%D0%B8%D1%83%D0%BC_%D1%98%D0%BE%D0%B4%D0%B8%D0%B4.webm"}},{"id":"zn-s","topic":"fire","types":["redox","synthesis"],"title":"Zinc + sulfur","nick":"Direct synthesis","color":"#e6e2a0","colorName":"zinc sulfide pale yellow","eq":{"l":"Zn(s) + S(s)","r":"ZnS(s)"},"see":"Heated with a torch, the mixed powder suddenly flares and smokes.","why":"Once ignited, zinc and sulfur combine in a fast, very exothermic reaction (ΔH_f° of {ZnS} ≈ −206 kJ/mol) that spreads through the powder by itself. Zinc goes from 0 to +2 and sulfur from 0 to −2.","remember":"Metal + non-metal → binary salt. A combination (synthesis) reaction.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:67._%D0%94%D0%B8%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D0%B0_%D1%81%D0%B8%D0%BD%D1%82%D0%B5%D0%B7%D0%B0_%D0%BD%D0%B0_%D1%86%D0%B8%D0%BD%D0%BA_%D1%81%D1%83%D0%BB%D1%84%D0%B8%D0%B4.ogg"}},{"id":"fe-o2","topic":"fire","types":["redox","combustion"],"title":"Hot steel wool + oxygen","nick":"Iron does burn","color":"#ffcf6b","colorName":"spark gold","eq":{"l":"3Fe(s) + 2O2(g)","r":"Fe3O4(s)"},"see":"Red-hot steel wool bursts into brilliant sparks inside the oxygen tube.","why":"An iron bar will not burn in air, but steel wool has a huge surface area, and pure oxygen is five times more concentrated than air. Both raise the rate. The product is mostly {Fe3O4}, with FeO and {Fe2O3} also possible.","remember":"Same iron, very different rate: surface area and concentration.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:103._%D0%93%D0%BE%D1%80%D0%B5%D1%9A%D0%B5_%D0%B6%D0%B5%D0%BB%D0%B5%D0%B7%D0%BD%D0%B0_%D0%B2%D0%BE%D0%BB%D0%BD%D0%B0_%D0%B2%D0%BE_%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%80%D0%BE%D0%B4.webm"}},{"id":"s-o2","topic":"fire","types":["redox","combustion"],"title":"Sulfur + oxygen","nick":"Blue flame, acidic gas","color":"#5b6dff","colorName":"sulfur flame blue","eq":{"l":"S(s) + O2(g)","r":"SO2(g)"},"more":[{"label":"The gas reaches the pink alkaline solution","l":"SO2(g) + 2NaOH(aq)","r":"Na2SO3(aq) + H2O(l)"}],"see":"Sulfur burns violet-blue in oxygen, and the gas it makes takes the pink out of the indicator solution.","why":"{SO2} is an acidic oxide. Bubbled into a basic solution, it neutralizes the hydroxide and phenolphthalein loses its pink. In the air, the same gas leads to sulfurous and sulfuric acid: acid rain.","remember":"Non-metal oxides are acidic: {SO2} + water → {H2SO3}.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:104._%D0%93%D0%BE%D1%80%D0%B5%D1%9A%D0%B5_%D0%BD%D0%B0_%D1%81%D1%83%D0%BB%D1%84%D1%83%D1%80_%D0%B2%D0%BE_%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%80%D0%BE%D0%B4.webm"}},{"id":"p-o2","topic":"fire","types":["redox","combustion"],"title":"Phosphorus + oxygen","nick":"White smoke","color":"#e8ecef","colorName":"{P4O10} white","eq":{"l":"4P(s) + 5O2(g)","r":"P4O10(s)"},"more":[{"label":"The smoke meets water","l":"P4O10(s) + 6H2O(l)","r":"4H3PO4(aq)"}],"see":"Burning red phosphorus flares brilliantly in oxygen and fills the vessel with white smoke.","why":"The smoke is {P4O10} (often written {P2O5}), a white solid and one of the strongest drying agents known. It reacts vigorously with water to give phosphoric acid.","remember":"White smoke = {P4O10}, an acidic oxide and desiccant.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:105._%D0%93%D0%BE%D1%80%D0%B5%D1%9A%D0%B5_%D0%BD%D0%B0_%D1%84%D0%BE%D1%81%D1%84%D0%BE%D1%80_%D0%B2%D0%BE_%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%80%D0%BE%D0%B4.webm"}},{"id":"h2-o2","topic":"fire","types":["redox","combustion"],"title":"Hydrogen balloon + flame","nick":"Fireball","color":"#ff9a3c","colorName":"fireball orange","eq":{"l":"2H2(g) + O2(g)","r":"2H2O(g)"},"see":"The balloon bursts into a rolling orange fireball.","why":"The balloon holds only hydrogen, so it burns only where it mixes with air: a fireball rather than a sharp bang. A pre-mixed 2:1 hydrogen–oxygen balloon detonates far more loudly. A pure hydrogen flame is nearly colourless; the orange comes from the rubber and dust. ΔH = −484 kJ for 2 mol of water vapour.","remember":"Unmixed {H2} → whoosh. Pre-mixed {H2}/{O2} → bang. Product: water.","speed":1,"credit":{"artist":"Maxim Bilovitskiy","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Hydrogen_balloon_explosion_2.webm"}},{"id":"silane","topic":"fire","types":["acid–base","pyrophoric"],"title":"Magnesium silicide + hydrochloric acid","nick":"Self-igniting gas","color":"#fff1c2","colorName":"silane flash","eq":{"l":"Mg2Si(s) + 4HCl(aq)","r":"2MgCl2(aq) + SiH4(g)"},"more":[{"label":"Silane meets air","l":"SiH4(g) + 2O2(g)","r":"SiO2(s) + 2H2O(l)"}],"see":"Bubbles rise and pop into tiny flashes and smoke rings at the surface.","why":"Silane is the silicon version of methane, but unlike {CH4} it is pyrophoric: it ignites in air by itself. Si–H bonds are weaker and more polar than C–H, silicon is larger and easier to attack, and the Si–O bond that forms is very strong. The white smoke is {SiO2}.","remember":"{SiH4} catches fire in air; {CH4} needs a spark. A group 14 trend.","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:05._%D0%A0%D0%B5%D0%B0%D0%BA%D1%86%D0%B8%D1%98%D0%B0_%D0%BD%D0%B0_%D0%BC%D0%B0%D0%B3%D0%BD%D0%B5%D0%B7%D0%B8%D1%83%D0%BC_%D1%81%D0%B8%D0%BB%D0%B8%D1%86%D0%B8%D0%B4_%D0%B2%D0%BE_%D1%81%D0%BE%D0%BB%D0%BD%D0%B0_%D0%BA%D0%B8%D1%81%D0%B5%D0%BB%D0%B8%D0%BD%D0%B0.webm"}},{"id":"ni3","topic":"fire","types":["decomposition","explosive"],"title":"Nitrogen triiodide","nick":"Feather-touch explosive","color":"#9b59d0","colorName":"iodine purple","eq":{"l":"2NI3(s)","r":"N2(g) + 3I2(g)"},"more":[{"label":"Making it","l":"3I2(s) + 5NH3(aq)","r":"NI3·NH3(s) + 3NH4I(aq)"}],"see":"Each touch of the dry dark solid sets off a sharp crack and a billowing purple cloud of iodine.","why":"Three large iodine atoms crowd around a small nitrogen, so the N–I bonds are strained and weak, while the product {N2} has one of the strongest bonds known (945 kJ/mol). The activation barrier is tiny, so the lightest touch sets it off.","remember":"Weak, strained N–I bonds + very stable {N2} = contact explosive.","speed":1.25,"credit":{"artist":"Michael Bell","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Detonating_Nitrogen_triiodide.webm"}},{"id":"chlorate-sugar","topic":"fire","types":["redox","combustion"],"title":"Potassium chlorate + sugar + acid","nick":"One drop to ignite","color":"#c58cff","colorName":"potassium violet","eq":{"l":"8KClO3(s) + C12H22O11(s)","r":"8KCl(s) + 12CO2(g) + 11H2O(g)"},"see":"One drop of concentrated sulfuric acid and the white powder erupts in a blinding violet flash.","why":"Sulfuric acid converts chlorate into chloric acid, which decomposes to chlorine dioxide, an unstable and powerful oxidizer. That ignites the sugar, and the heat drives the main chlorate–sugar reaction. Potassium colours the flame violet.","remember":"Acid turns {ClO3^-} into {ClO2}, which lights the fuel.","speed":1,"credit":{"artist":"Дени Ингилизовски","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:85._%D0%A1%D0%B0%D0%BC%D0%BE%D0%B7%D0%B0%D0%BF%D0%B0%D0%BB%D0%B8%D0%B2%D0%B0_%D1%81%D0%BC%D0%B5%D1%81%D0%B0_%D0%BD%D0%B0_%D0%B1%D0%B0%D0%B7%D0%B0_%D0%BD%D0%B0_%D0%BA%D0%B0%D0%BB%D0%B8%D1%83%D0%BC_%D1%85%D0%BB%D0%BE%D1%80%D0%B0%D1%82,_%D1%88%D0%B5%D1%9C%D0%B5%D1%80_%D0%B8_%D1%81%D1%83%D0%BB%D1%84%D1%83%D1%80%D0%BD%D0%B0_%D0%BA%D0%B8%D1%81%D0%B5%D0%BB%D0%B8%D0%BD%D0%B0.ogg"}},{"id":"nh4-ignition","topic":"fire","types":["redox","catalysis"],"title":"Zinc + {NH4NO3} + {NH4Cl} + water","nick":"Lit by a drop of water","color":"#8fe3d0","colorName":"zinc flame blue-green","eq":{"l":"NH4NO3(s) + Zn(s)","r":"ZnO(s) + N2(g) + 2H2O(g)"},"more":[{"label":"Chloride helps attack the zinc","l":"Zn(s) + 2NH4Cl(s)","r":"ZnCl2(s) + 2NH3(g) + H2(g)"}],"see":"A few drops of water and the pile steams, then bursts into blue-white flame and white smoke.","why":"Water dissolves a little of the salts so the solids can react, and chloride ions strip the oxide layer from the zinc. Ammonium nitrate is both oxidizer and fuel: nitrate oxidizes the zinc while ammonium is oxidized to {N2}. The white smoke is {ZnO}.","remember":"Water starts it, {Cl^-} speeds it, {NH4NO3} is the oxidizer.","speed":1,"credit":{"artist":"Martin.Zapletal","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Ignition_of_Ammonium_Coumpounds_with_Water.webm"}},{"id":"barking-dog","topic":"fire","types":["redox","combustion"],"title":"Carbon disulfide + nitrous oxide","nick":"Barking dog","color":"#6f8cff","colorName":"blue flash","eq":{"l":"8N2O(g) + 4CS2(g)","r":"8N2(g) + 4CO2(g) + S8(s)"},"see":"A brilliant blue-white flash races down the long tube with a loud \"woof\" and leaves yellow sulfur on the glass.","why":"Once lit at the top, the flame front accelerates down the tube; the pressure wave makes the bark. {CS2} is the fuel and {N2O} supplies oxygen, releasing extra energy as it decomposes to {N2}. Sulfur is left as a yellow deposit.","remember":"Blue flash + woof + yellow film of {S8}.","speed":1,"credit":{"artist":"Maxim Bilovitskiy","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Barking_Dog_Reaction.webm"}},{"id":"pharaoh","topic":"fire","types":["decomposition","combustion"],"title":"Mercury(II) thiocyanate, ignited","nick":"Pharaoh's serpent","color":"#e8d9a8","colorName":"carbon nitride yellow","eq":{"l":"2Hg(SCN)2(s)","r":"2HgS(s) + CS2(g) + C3N4(s)"},"more":[{"label":"Carbon disulfide burns","l":"CS2(g) + 3O2(g)","r":"CO2(g) + 2SO2(g)"},{"label":"Mercury sulfide burns","l":"HgS(s) + O2(g)","r":"Hg(g) + SO2(g)"}],"see":"A small pellet grows into a long, curling yellowish \"snake\".","why":"Decomposition releases gases that inflate a solid carbon nitride ({C3N4}) foam, which keeps extruding from the burning pellet. It is rarely done now because it releases mercury vapour and {SO2}, both toxic.","remember":"The snake is {C3N4} foam blown up by gases. Releases toxic Hg vapour.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:51._%D0%A4%D0%B0%D1%80%D0%B0%D0%BE%D0%BD_%D0%B7%D0%BC%D0%B8%D1%98%D0%B0.ogg"}},{"id":"fe-s","topic":"fire","types":["redox","synthesis"],"yt":{"id":"PB8tSJjnQK8","start":0,"end":38,"author":"lgschemistry"},"title":"Iron + sulfur","nick":"Mixture to compound","color":"#ff7a2a","colorName":"red-hot glow","eq":{"l":"Fe(s) + S(s)","r":"FeS(s)"},"see":"A test tube of mixed iron and sulfur powder is heated: the sulfur melts, then the mixture glows red-hot and keeps glowing after the flame is removed.","why":"The reaction is exothermic (ΔH_f° of FeS ≈ −100 kJ/mol), so once one spot is hot enough, the heat it releases ignites the next. Before heating, a magnet can pull the iron out of the mixture; afterwards the iron is locked into the compound iron(II) sulfide and the magnet no longer separates it.","remember":"Mixture: magnet separates it. Compound (FeS): it doesn't.","credit":{"artist":"lgschemistry","license":"YouTube","page":"https://www.youtube.com/watch?v=PB8tSJjnQK8&t=0s"}},{"id":"al-cl2","topic":"fire","types":["redox","synthesis"],"yt":{"id":"aK85PZX2xNE","start":3,"end":28,"author":"Periodic Videos"},"title":"Aluminium + chlorine gas","nick":"Foil bursts into flame","color":"#d7e24a","colorName":"chlorine yellow-green","eq":{"l":"2Al(s) + 3Cl2(g)","r":"Al2Cl6(s)"},"see":"Heated aluminium foil lowered into a flask of yellow-green chlorine flares into brilliant white light and smoke.","why":"Chlorine is a strong oxidizer (E° = +1.36 V) and aluminium a strong reductant. Once the oxide skin is breached, the reaction is violently exothermic. Aluminium chloride is a Lewis acid that exists as the dimer Al₂Cl₆; it is the classic Friedel–Crafts catalyst.","remember":"Al + halogen → violent. AlCl₃ is a Lewis acid (Al₂Cl₆ dimer).","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=aK85PZX2xNE&t=3s"}},{"id":"cu-cl2","topic":"fire","types":["redox","synthesis"],"yt":{"id":"edLpxdERQZc","start":9,"end":47,"author":"NCSSM"},"title":"Copper + chlorine gas","nick":"Chlorine does what HCl can't","color":"#3fbfa0","colorName":"copper(II) chloride blue-green","eq":{"l":"Cu(s) + Cl2(g)","r":"CuCl2(s)"},"see":"Hot copper foil glows in a jar of yellow-green chlorine; water then dissolves the product to a blue-green solution.","why":"Hydrochloric acid can't oxidize copper because H⁺ is too weak an oxidant, but chlorine (E° = +1.36 V) easily takes copper to +2. The blue-green colour of the solution comes from copper(II) with both water and chloride ligands.","remember":"Cl₂ oxidizes Cu; HCl can't.","credit":{"artist":"NCSSM","license":"YouTube","page":"https://www.youtube.com/watch?v=edLpxdERQZc&t=9s"}},{"id":"fe-halogens","topic":"fire","types":["redox","group trends"],"yt":{"id":"EvtyMr5EvBY","start":25,"end":99,"rate":1.5,"author":"Royal Society of Chemistry"},"title":"Hot iron wool + {Cl2}, {Br2} and {I2}","nick":"Group 17 reactivity in three tubes","color":"#c0502a","colorName":"bromine red-brown","eq":{"l":"2Fe(s) + 3Cl2(g)","r":"2FeCl3(s)"},"more":[{"label":"Bromine","l":"2Fe(s) + 3Br2(g)","r":"2FeBr3(s)"},{"label":"Iodine stops at iron(II)","l":"Fe(s) + I2(g)","r":"FeI2(s)"}],"see":"Hot iron wool glows brightly in chlorine, less in bromine vapour, and only faintly in iodine vapour.","why":"Oxidizing power falls down group 17 (E°: Cl₂ +1.36, Br₂ +1.07, I₂ +0.54 V), so the reactions get less vigorous. Iodine only makes FeI₂: Fe³⁺ would oxidize iodide back to iodine (2Fe³⁺ + 2I⁻ → 2Fe²⁺ + I₂), so FeI₃ can't survive.","remember":"F > Cl > Br > I. Iron + iodine gives FeI₂, not FeI₃.","credit":{"artist":"Royal Society of Chemistry","license":"YouTube","page":"https://www.youtube.com/watch?v=EvtyMr5EvBY&t=25s"}},{"id":"h2-cl2","topic":"fire","types":["radical chain","photochemistry"],"yt":{"id":"S0eKJZKfMBg","start":0,"end":30,"author":"ChemPics"},"title":"Hydrogen + chlorine + light","nick":"A flash sets it off","color":"#f2f0a0","colorName":"flash white","eq":{"l":"H2(g) + Cl2(g)","r":"2HCl(g)","over":"light"},"more":[{"label":"Initiation","l":"Cl2","r":"2Cl•","over":"light"},{"label":"Propagation","l":"Cl• + H2","r":"HCl + H•"},{"label":"Propagation","l":"H• + Cl2","r":"HCl + Cl•"}],"see":"A tube of the gas mixture explodes the moment a bright flash of light hits it.","why":"In the dark the mixture is stable. A photon breaks a Cl–Cl bond (243 kJ/mol), and the chlorine atoms start a chain: each step makes HCl and regenerates a radical, so one photon can produce up to a million HCl molecules. The chain runs away into an explosion.","remember":"Light → Cl• → radical chain → bang. Stable in the dark.","credit":{"artist":"ChemPics","license":"YouTube","page":"https://www.youtube.com/watch?v=S0eKJZKfMBg&t=0s"}},{"id":"white-p","topic":"fire","types":["redox","allotropes"],"yt":{"id":"LK82rjh8E80","start":0,"end":55,"author":"NileRed"},"title":"White phosphorus + air","nick":"Catches fire by itself","color":"#f2ead0","colorName":"phosphorus smoke white","eq":{"l":"P4(s) + 5O2(g)","r":"P4O10(s)"},"see":"Waxy white phosphorus taken out of water starts to smoke and soon bursts into flame on its own.","why":"White phosphorus is made of P₄ tetrahedra with 60° bond angles, so the bonds are badly strained and very reactive. It ignites in air at around 30 °C and is stored under water. Red phosphorus, a polymeric allotrope, is far more stable, which is why it is the one used on matchboxes.","remember":"White P: strained P₄, stored under water. Red P: polymer, stable.","credit":{"artist":"NileRed","license":"YouTube","page":"https://www.youtube.com/watch?v=LK82rjh8E80&t=0s"}},{"id":"zn-i2","topic":"fire","types":["redox","synthesis"],"yt":{"id":"IEG8r_w0iY8","start":3,"end":40,"author":"Mr. Everett"},"title":"Zinc + iodine + a drop of water","nick":"Purple eruption","color":"#c43fb0","colorName":"iodine vapour purple","eq":{"l":"Zn(s) + I2(s)","r":"ZnI2(s)","over":"H2O"},"see":"A few drops of water on the zinc–iodine mixture and purple vapour pours out of the tube.","why":"As with aluminium and iodine, water lets the two solids react. The reaction is exothermic, and the heat sublimes the excess iodine into the purple cloud. The product, zinc iodide, is colourless; the brown liquid left is iodine dissolved in the zinc iodide solution.","remember":"Purple = subliming I₂. Water is the trigger.","credit":{"artist":"Mr. Everett","license":"YouTube","page":"https://www.youtube.com/watch?v=IEG8r_w0iY8&t=3s"}},{"id":"f2-charcoal","topic":"fire","types":["redox","halogens"],"yt":{"id":"-_7axQ7YAnE","start":3,"end":14,"author":"Periodic Videos"},"title":"Fluorine gas + charcoal","nick":"The strongest oxidizer","color":"#e8e070","colorName":"fluorine pale yellow","eq":{"l":"C(s) + 2F2(g)","r":"CF4(g)"},"see":"Charcoal bursts into flame the moment fluorine gas reaches it, with no other ignition.","why":"Fluorine is the most powerful elemental oxidizer (E° = +2.87 V). Its F–F bond is unusually weak (159 kJ/mol) because the small atoms' lone pairs repel, while the C–F bonds it forms are among the strongest single bonds known. Huge energy release and a tiny barrier make it attack almost anything.","remember":"Weak F–F bond + strong bonds to F = fluorine attacks everything.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=-_7axQ7YAnE&t=3s"}},{"id":"f2-sulfur","topic":"fire","types":["redox","halogens"],"yt":{"id":"ca4JtA_EZzY","start":3,"end":25,"author":"Periodic Videos"},"title":"Fluorine gas + sulfur","nick":"Making SF₆","color":"#e6d34a","colorName":"sulfur yellow","eq":{"l":"S(s) + 3F2(g)","r":"SF6(g)"},"see":"Yellow sulfur ignites as fluorine flows over it and burns away.","why":"Fluorine pushes sulfur all the way to its highest oxidation state, +6. The product, SF₆, is octahedral and remarkably inert because the six fluorines shield the sulfur from attack. It is used as an insulating gas in high-voltage equipment.","remember":"Fluorine brings out maximum oxidation states: S → SF₆.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=ca4JtA_EZzY&t=3s"}},{"id":"elephant","topic":"oxygen","types":["decomposition","catalysis"],"title":"Hydrogen peroxide + potassium iodide","nick":"Elephant toothpaste","color":"#e7c46a","colorName":"iodine-tinted foam","eq":{"l":"2H2O2(aq)","r":"2H2O(l) + O2(g)","over":"I^-"},"more":[{"label":"Step 1 (slow)","l":"H2O2(aq) + I^-(aq)","r":"H2O(l) + IO^-(aq)"},{"label":"Step 2 (fast)","l":"H2O2(aq) + IO^-(aq)","r":"H2O(l) + O2(g) + I^-(aq)"}],"see":"A column of warm, steaming foam shoots out of the cylinder.","why":"Iodide is a catalyst: consumed in step 1 and returned in step 2, so it does not appear in the overall equation. Detergent traps the oxygen as foam. The reaction is exothermic (about −98 kJ per mole of {H2O2}), so the foam steams, and a little iodine tints it yellow.","remember":"A catalyst is used up, then regenerated. It never shows in the overall equation.","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:14._%D0%A1%D0%BB%D0%BE%D0%BD%D0%BE%D0%B2%D1%81%D0%BA%D0%B0_%D0%BF%D0%B0%D1%81%D1%82%D0%B0_%D0%B7%D0%B0_%D0%B7%D0%B0%D0%B1%D0%B8.webm"}},{"id":"h2o2-mno2","topic":"oxygen","types":["decomposition","catalysis"],"title":"Hydrogen peroxide + manganese dioxide","nick":"Heterogeneous catalysis","color":"#dfe6e8","colorName":"steam white","eq":{"l":"2H2O2(aq)","r":"2H2O(l) + O2(g)","over":"MnO2"},"see":"A dark solid dropped into concentrated peroxide sets off a hissing cloud of steam.","why":"{MnO2} is a solid catalyst for a reaction in solution: heterogeneous catalysis. Its surface offers a lower-energy pathway, and it is still there, unchanged, at the end. The decomposition releases so much heat that water boils off as steam. Test: oxygen relights a glowing splint.","remember":"{MnO2} speeds it up and survives. Oxygen relights a glowing splint.","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:13._%D0%9A%D0%B0%D1%82%D0%B0%D0%BB%D0%B8%D1%82%D0%B8%D1%87%D0%BA%D0%BE_%D1%80%D0%B0%D0%B7%D0%BB%D0%BE%D0%B6%D1%83%D0%B2%D0%B0%D1%9A%D0%B5_%D0%BD%D0%B0_%D0%B2%D0%BE%D0%B4%D0%BE%D1%80%D0%BE%D0%B4_%D0%BF%D0%B5%D1%80%D0%BE%D0%BA%D1%81%D0%B8%D0%B4.webm"}},{"id":"singlet-o2","topic":"oxygen","types":["redox","chemiluminescence"],"title":"Chlorine + alkaline hydrogen peroxide","nick":"Red glow of singlet oxygen","color":"#ff3b3b","colorName":"634 nm red","eq":{"l":"Cl2(g) + H2O2(aq) + 2OH^-(aq)","r":"2Cl^-(aq) + 2H2O(l) + ¹O2(g)"},"more":[{"label":"Making the chlorine","l":"2KMnO4(s) + 16HCl(aq)","r":"2KCl(aq) + 2MnCl2(aq) + 5Cl2(g) + 8H2O(l)"},{"label":"The glow","l":"2 ¹O2(g)","r":"2 ³O2(g) + photon (634 nm)"}],"see":"Each bubble of chlorine glows red as it passes through the bubbler.","why":"The oxygen is born in an excited singlet state, with its two outermost electrons paired in one π* orbital. Returning to the normal triplet ground state is spin-forbidden, so it is slow. When two excited molecules collide they can emit one red photon together at 634 nm. This is chemiluminescence.","remember":"Red glow = pairs of singlet {O2} relaxing. Light from a reaction, not from heat.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:110._%D0%A1%D0%B8%D0%BD%D0%B3%D0%BB%D0%B5%D1%82%D0%B5%D0%BD_%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%80%D0%BE%D0%B4_(%D1%85%D0%B5%D0%BC%D0%B8%D0%BB%D1%83%D0%BC%D0%B8%D0%BD%D0%B8%D1%81%D1%86%D0%B5%D0%BD%D1%86%D0%B8%D1%98%D0%B0).webm"}},{"id":"cro5","topic":"oxygen","types":["redox","complex"],"title":"Dichromate + hydrogen peroxide (+ ether)","nick":"Blue chromium peroxide","color":"#2f5fe0","colorName":"{CrO5} blue","eq":{"l":"Cr2O7^2-(aq) + 4H2O2(aq) + 2H^+(aq)","r":"2CrO(O2)2 + 5H2O(l)"},"more":[{"label":"First, chromate is acidified","l":"2CrO4^2-(aq) + 2H^+(aq)","a":"\u003c=>","r":"Cr2O7^2-(aq) + H2O(l)"}],"see":"Under a layer of ether, adding peroxide turns the solution deep blue; the colour then moves up into the ether.","why":"{CrO5}, written {CrO(O2)2}, has one oxo and two peroxo ligands. Chromium stays at +6, because peroxide oxygens count −1 each. The compound decomposes quickly in water but survives in ether, so it is extracted into the top layer. It is a classic test for Cr(VI) or for {H2O2}.","remember":"Blue in ether = {CrO(O2)2}. Chromium is still +6.","speed":1,"credit":{"artist":"Hugo","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Oxodiperoxochromium-complex.webm"}},{"id":"golden-rain","topic":"precip","types":["precipitation","solubility"],"title":"Lead(II) nitrate + potassium iodide","nick":"Golden rain","color":"#f5c518","colorName":"lead iodide yellow","eq":{"l":"Pb(NO3)2(aq) + 2KI(aq)","r":"PbI2(s) + 2KNO3(aq)"},"more":[{"label":"Net ionic","l":"Pb^2+(aq) + 2I^-(aq)","r":"PbI2(s)"}],"see":"Mixing the clear solutions gives a bright yellow solid. Heated until it dissolves, then cooled, it returns as glittering golden flakes.","why":"Lead(II) iodide is far more soluble in hot water than in cold. Dissolved hot and cooled slowly, it recrystallizes as thin hexagonal plates that sparkle like gold leaf. Lead compounds are toxic.","remember":"{PbI2} is bright yellow, and its solubility rises steeply with temperature.","speed":2,"credit":{"artist":"Sartnuphon","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Golden_rain_demonstration.webm"}},{"id":"ag-halides","topic":"precip","types":["precipitation","analysis"],"title":"Silver nitrate + halide ions","nick":"The halide test","color":"#e9d57a","colorName":"silver iodide yellow","eq":{"l":"Ag^+(aq) + X^-(aq)","r":"AgX(s)"},"pairs":[["F^-","no precipitate","#9aa7a5"],["Cl^-","white","#f2f4f4"],["Br^-","cream","#eadfb4"],["I^-","pale yellow","#e9d57a"]],"see":"Fluoride stays clear; chloride gives a white precipitate, bromide cream, iodide pale yellow.","why":"AgF dissolves because the small fluoride ion is very strongly hydrated. Down the group the halide grows larger and more polarizable, the Ag–X bond becomes more covalent, and the solid becomes less soluble: Ksp(AgCl) = 1.8 × 10⁻¹⁰, Ksp(AgBr) = 5.0 × 10⁻¹³, Ksp(AgI) = 8.5 × 10⁻¹⁷. The colour deepens the same way.","remember":"F soluble · Cl white · Br cream · I yellow.","speed":1,"credit":{"artist":"Hugo","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Solubility_of_silver_halides.webm"}},{"id":"ag-precip","topic":"precip","types":["precipitation","solubility"],"title":"Silver chromate, then chloride added","nick":"Which precipitate wins?","color":"#b5452b","colorName":"silver chromate brick red","eq":{"l":"2Ag^+(aq) + CrO4^2-(aq)","r":"Ag2CrO4(s)"},"more":[{"label":"Chloride is added","l":"Ag2CrO4(s) + 2Cl^-(aq)","r":"2AgCl(s) + CrO4^2-(aq)"}],"see":"Silver nitrate turns yellow chromate solution into a brick-red precipitate, which goes pale as chloride is added.","why":"Silver chromate's Ksp (1.1 × 10⁻¹²) is smaller than silver chloride's (1.8 × 10⁻¹⁰), but the formulas differ, so compare molar solubilities: about 6.5 × 10⁻⁵ M for {Ag2CrO4} versus 1.3 × 10⁻⁵ M for AgCl. AgCl is less soluble, so the red solid converts to white. The Mohr titration relies on this: red only appears once all the chloride is gone.","remember":"When formulas differ, compare molar solubility, not Ksp. Mohr titration endpoint.","speed":1,"credit":{"artist":"Hugo","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Precipitation_of_Ag2CrO4_and_AgCl.webm"}},{"id":"fe-oh","topic":"precip","types":["precipitation"],"title":"Iron(III) chloride + hydroxide","nick":"Rust-brown precipitate","color":"#b45a28","colorName":"iron(III) hydroxide rust","eq":{"l":"FeCl3(aq) + 3KOH(aq)","r":"Fe(OH)3(s) + 3KCl(aq)"},"more":[{"label":"Compare iron(II)","l":"Fe^2+(aq) + 2OH^-(aq)","r":"Fe(OH)2(s), dirty green"}],"see":"A rust-brown, jelly-like precipitate forms instantly.","why":"Iron(III) hydroxide (really hydrated iron(III) oxide) is extremely insoluble, with Ksp near 10⁻³⁸. The colour tells you the oxidation state: iron(II) gives a dirty green precipitate that browns in air as it oxidizes to iron(III).","remember":"Fe²⁺ + OH⁻ → green. Fe³⁺ + OH⁻ → rust brown.","speed":1,"credit":{"artist":"FilHru","license":"CC0","licenseUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","page":"https://commons.wikimedia.org/wiki/File:Sr%C3%A1%C5%BEec%C3%AD_reakce_chloridu_%C5%BEeleznat%C3%A9ho_s_hydroxidem_draseln%C3%BDm_za_vzniku_hydroxidu_%C5%BEelezit%C3%A9ho.webm"}},{"id":"chem-garden","topic":"precip","types":["precipitation","osmosis"],"title":"Metal salt crystals in sodium silicate","nick":"Chemical garden","color":"#3aa0c9","colorName":"copper silicate blue","eq":{"l":"M^2+(aq) + SiO3^2-(aq)","r":"MSiO3(s)"},"see":"Coloured tubes and stalks grow upward from each crystal.","why":"Each crystal starts to dissolve and instantly wraps itself in a membrane of insoluble metal silicate. Water moves in through the membrane by osmosis, the pressure bursts it, fresh metal ions meet more silicate, and a new section of tube forms. Buoyancy sends the growth upward.","remember":"Precipitate membrane + osmosis = growing tubes.","speed":1,"credit":{"artist":"mgregggphone","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Growth_of_a_chemical_garden.ogv"}},{"id":"naoh-tests","topic":"precip","types":["precipitation","analysis"],"yt":{"id":"3B5Sqp_J5t8","start":9,"end":38,"author":"Royal Society of Chemistry"},"title":"Transition metal ions + sodium hydroxide","nick":"Identify the ion by its precipitate","color":"#3b8fe0","colorName":"copper(II) hydroxide blue","eq":{"l":"M^n+(aq) + nOH^-(aq)","r":"M(OH)n(s)"},"pairs":[["Fe^3+","orange-brown","#c0652a"],["Fe^2+","dirty green","#7d9a3c"],["Cu^2+","pale blue","#4ea3e8"]],"see":"A few drops of sodium hydroxide give a coloured precipitate in each tube.","why":"Most transition metal hydroxides are insoluble, and their colours come from the metal ion's d electrons, so the precipitate identifies the ion. Iron(II) hydroxide slowly turns brown at the surface as air oxidizes it to iron(III).","remember":"Fe³⁺ brown · Fe²⁺ green · Cu²⁺ blue.","credit":{"artist":"Royal Society of Chemistry","license":"YouTube","page":"https://www.youtube.com/watch?v=3B5Sqp_J5t8&t=9s"}},{"id":"prussian-blue","topic":"precip","types":["precipitation","analysis"],"yt":{"id":"x3xzw_sTcMs","start":0,"end":47,"author":"Colorful Chemistry"},"title":"Iron(III) + hexacyanoferrate(II)","nick":"Prussian blue","color":"#1f4fd0","colorName":"Prussian blue","eq":{"l":"4Fe^3+(aq) + 3[Fe(CN)6]^4-(aq)","r":"Fe4[Fe(CN)6]3(s)"},"see":"Drops of one solution blooming through the other turn into an intensely deep blue.","why":"Prussian blue contains iron in two oxidation states, Fe(II) bound to carbon and Fe(III) bound to nitrogen. Light can push an electron from Fe(II) to Fe(III) (intervalence charge transfer), which absorbs red-orange light very strongly, so the solid is an intense blue. It is a classic test for Fe³⁺.","remember":"Fe³⁺ + ferrocyanide → Prussian blue. Colour from Fe(II) → Fe(III) electron hopping.","credit":{"artist":"Colorful Chemistry","license":"YouTube","page":"https://www.youtube.com/watch?v=x3xzw_sTcMs&t=0s"}},{"id":"thiosulfate","topic":"precip","types":["disproportionation","kinetics"],"yt":{"id":"eCW3uHuBsUE","start":0,"end":22,"author":"Sam Murfitt"},"title":"Sodium thiosulfate + hydrochloric acid","nick":"The disappearing cross","color":"#e8e2a0","colorName":"colloidal sulfur yellow","eq":{"l":"Na2S2O3(aq) + 2HCl(aq)","r":"2NaCl(aq) + S(s) + SO2(g) + H2O(l)"},"see":"The clear solution slowly clouds pale yellow until the cross drawn underneath disappears.","why":"In acid, thiosulfate (average sulfur oxidation state +2) disproportionates into solid sulfur (0) and sulfur dioxide (+4). The sulfur forms as a fine colloid that gradually blocks the view. Timing how long the cross takes to vanish at different concentrations or temperatures is a standard rate experiment.","remember":"Cloudiness = colloidal sulfur. Time to hide the cross ∝ 1/rate.","credit":{"artist":"Sam Murfitt","license":"YouTube","page":"https://www.youtube.com/watch?v=eCW3uHuBsUE&t=0s"}},{"id":"ni-complexes","topic":"complex","types":["ligand substitution"],"title":"Nickel(II) + five ligands","nick":"One metal, five colours","color":"#5fbf7a","colorName":"hexaaquanickel green","eq":{"l":"[Ni(H2O)6]^2+(aq) + 6NH3(aq)","r":"[Ni(NH3)6]^2+(aq) + 6H2O(l)"},"more":[{"label":"Ethylenediamine (purple)","l":"[Ni(H2O)6]^2+ + 3en","r":"[Ni(en)3]^2+ + 6H2O"},{"label":"Dimethylglyoxime (red precipitate)","l":"Ni^2+ + 2dmgH2","r":"Ni(dmgH)2(s) + 2H^+"},{"label":"Cyanide (yellow)","l":"Ni^2+ + 4CN^-","r":"[Ni(CN)4]^2-"}],"see":"The same nickel solution goes green, blue, purple, pink-red and yellow in five glasses.","why":"Ligands split the d-orbital energies by different amounts, following the spectrochemical series {H2O} \u003c {NH3} \u003c en \u003c {CN^-}. A larger splitting means higher-energy light is absorbed, so the colour shifts. Strong-field cyanide makes Ni(II) (d⁸) square planar; it absorbs violet light and looks yellow.","remember":"Ni²⁺: water green · NH₃ blue · en purple · dmg red · CN⁻ yellow.","speed":1,"credit":{"artist":"Deni Ingilizovski","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:44._%D0%9A%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%D0%B8_%D0%BD%D0%B0_%D0%BD%D0%B8%D0%BA%D0%B5%D0%BB.ogg"}},{"id":"fe-scn","topic":"complex","types":["ligand substitution","analysis"],"title":"Iron(III) + thiocyanate","nick":"Fake blood","color":"#c0142d","colorName":"blood red","eq":{"l":"Fe^3+(aq) + SCN^-(aq)","a":"\u003c=>","r":"[Fe(SCN)]^2+(aq)"},"see":"A \"knife\" wet with iron(III) chloride leaves a blood-red line on skin wiped with thiocyanate.","why":"Thiocyanate replaces a water ligand on iron(III) to give the intensely red {[Fe(SCN)(H2O)5]^2+}. It is so strongly coloured that it detects traces of {Fe^3+}, and it is the textbook Le Chatelier demonstration: add more {Fe^3+} or {SCN^-} and the red deepens.","remember":"Blood red = test for Fe(III). The Le Chatelier example.","speed":1,"credit":{"artist":"Дени Ингилизовски","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:92._%D0%92%D0%B5%D1%88%D1%82%D0%B0%D1%87%D0%BA%D0%B0_%D0%BA%D1%80%D0%B2.ogg"}},{"id":"ni-dmg","topic":"complex","types":["precipitation","analysis"],"title":"Nickel(II) + dimethylglyoxime","nick":"Strawberry-red test","color":"#e0405a","colorName":"strawberry red","eq":{"l":"Ni^2+(aq) + 2dmgH2(aq)","r":"Ni(dmgH)2(s) + 2H^+(aq)"},"see":"The reagent turns pure Ni²⁺ solution red, and also picks nickel out of the bottle of mixed metal ions.","why":"Each dimethylglyoxime loses one H⁺ and binds nickel through two nitrogens, giving a flat, square-planar complex held together by O–H···O hydrogen bonds. It is highly selective, so it finds nickel even in a mixture of eight different metal ions. Base is added to take up the released H⁺.","remember":"Pink-red precipitate with dmg = nickel.","speed":1,"credit":{"artist":"Leiem","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Analysis_of_nickel(II)_using_dimethylglyoxime.webm"}},{"id":"agcl-nh3","topic":"complex","types":["complexation","solubility"],"title":"Silver chloride + ammonia","nick":"Dissolving a precipitate","color":"#e8ecef","colorName":"silver chloride white","eq":{"l":"AgCl(s) + 2NH3(aq)","r":"[Ag(NH3)2]^+(aq) + Cl^-(aq)"},"see":"The white silver chloride precipitate disappears as ammonia solution is added.","why":"Ammonia binds {Ag^+} as the linear diamminesilver(I) ion (Kf ≈ 1.6 × 10⁷). Removing free {Ag^+} pulls the dissolution equilibrium of AgCl to the right. AgBr needs concentrated ammonia and AgI barely dissolves at all, which is how halide tests are confirmed.","remember":"AgCl dissolves in dilute {NH3}, AgBr only in concentrated, AgI not at all.","speed":1,"credit":{"artist":"Hugo","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Solubility_of_AgCl_in_ammonia_solution.webm"}},{"id":"cuso4-dehyd","topic":"complex","types":["dehydration","hydration"],"title":"Heating blue copper(II) sulfate","nick":"Water as a ligand","color":"#3b8fe0","colorName":"copper sulfate blue","eq":{"l":"CuSO4·5H2O(s)","r":"CuSO4(s) + 5H2O(g)","over":"heat"},"more":[{"label":"Water added back","l":"CuSO4(s) + 5H2O(l)","r":"CuSO4·5H2O(s)"}],"see":"Blue crystals turn white when heated, then blue again when water is added back.","why":"The blue comes from water ligands around {Cu^2+}: they split its d-orbitals so it absorbs orange-red light. Drive the water off and the white anhydrous salt no longer absorbs visible light. Rehydration is exothermic, and white anhydrous {CuSO4} is a standard test for water.","remember":"Blue needs water ligands. White {CuSO4} turning blue = water present.","speed":1.5,"credit":{"artist":"Hugo","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Dehydration_of_Copper_Sulfate_pentahydrate.webm"}},{"id":"cu-nh3","topic":"complex","types":["ligand substitution"],"yt":{"id":"YQs0sFLCRZg","start":0,"end":46,"author":"Wayne Breslyn"},"title":"Copper(II) + ammonia","nick":"Deep blue tetraammine","color":"#2b4fd8","colorName":"tetraamminecopper blue","eq":{"l":"[Cu(H2O)6]^2+(aq) + 4NH3(aq)","r":"[Cu(NH3)4(H2O)2]^2+(aq) + 4H2O(l)"},"more":[{"label":"A little ammonia first gives a pale blue precipitate","l":"Cu^2+(aq) + 2OH^-(aq)","r":"Cu(OH)2(s)"}],"see":"Copper sulfate meeting ammonia solution turns an intense royal blue.","why":"Ammonia is a stronger-field ligand than water, so it replaces four of the waters around Cu²⁺. The new complex absorbs further toward the red end and looks deep blue. A small amount of ammonia only supplies OH⁻ and precipitates pale blue Cu(OH)₂; excess ammonia dissolves it as the ammine complex.","remember":"Pale blue → pale blue precipitate → deep royal blue in excess NH₃.","credit":{"artist":"Wayne Breslyn","license":"YouTube","page":"https://www.youtube.com/watch?v=YQs0sFLCRZg&t=0s"}},{"id":"nh3-fountain","topic":"gas","types":["acid–base","solubility"],"title":"Ammonia gas + water","nick":"Ammonia fountain","color":"#ff4fa3","colorName":"phenolphthalein pink","eq":{"l":"NH3(g) + H2O(l)","a":"\u003c=>","r":"NH4^+(aq) + OH^-(aq)"},"see":"Water squirts up into the flask of ammonia and turns pink.","why":"Ammonia is extremely soluble in water (about 700 volumes per volume at 20 °C) because it hydrogen-bonds with water. The first drops dissolve so much gas that the pressure in the flask collapses, and the air outside pushes water up as a fountain. Phenolphthalein turns pink because ammonia is a weak base.","remember":"Huge solubility → pressure drop → fountain. Pink = base.","speed":1,"credit":{"artist":"Martin.Zapletal","license":"CC BY 4.0","licenseUrl":"https://creativecommons.org/licenses/by/4.0","page":"https://commons.wikimedia.org/wiki/File:Ammonia_Fountain.webm"}},{"id":"nh4cl","topic":"gas","types":["acid–base","synthesis"],"title":"Ammonia + hydrogen chloride gas","nick":"White smoke","color":"#e8ecef","colorName":"ammonium chloride white","eq":{"l":"NH3(g) + HCl(g)","r":"NH4Cl(s)"},"see":"Two invisible gas streams meet and make thick white smoke.","why":"Ammonia's lone pair takes a proton from HCl: a Brønsted acid–base reaction with no water involved. The product is ionic, so it appears as a fine solid. In the classic tube version, the ring forms nearer the HCl end because lighter {NH3} (17 g/mol) diffuses faster than HCl (36.5 g/mol), as Graham's law predicts.","remember":"Gas + gas → white solid. The ring forms nearer the HCl end (Graham's law).","speed":1,"credit":{"artist":"Petrovskyz","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:08._%D0%94%D0%B8%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D0%B0_%D1%81%D0%B8%D0%BD%D1%82%D0%B5%D0%B7%D0%B0_%D0%BD%D0%B0_%D0%B0%D0%BC%D0%BE%D0%BD%D0%B8%D1%83%D0%BC_%D1%85%D0%BB%D0%BE%D1%80%D0%B8%D0%B4.webm"}},{"id":"cac2-water","topic":"gas","types":["acid–base","gas evolution"],"title":"Calcium carbide + water","nick":"Acetylene on demand","color":"#c9d3d6","colorName":"lime white","eq":{"l":"CaC2(s) + 2H2O(l)","r":"Ca(OH)2(aq) + C2H2(g)"},"see":"The grey lumps fizz in water, and the acetylene they release burns with a smoky yellow flame when lit.","why":"Calcium carbide is ionic: {Ca^2+} and the acetylide ion {C2^2-}. Acetylide is the conjugate base of ethyne (pKa ≈ 25), so water protonates it instantly. Miners once used this reaction in carbide lamps.","remember":"{C2^2-} + water → ethyne. A strong base grabbing protons from water.","speed":1,"credit":{"artist":"Alan Kuehner","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Calcium_carbide_and_water.webm"}},{"id":"co2-limewater","topic":"gas","types":["acid–base","precipitation"],"title":"Carbon dioxide + limewater","nick":"The CO₂ test","color":"#e9eef0","colorName":"milky white","eq":{"l":"Ca(OH)2(aq) + CO2(g)","r":"CaCO3(s) + H2O(l)"},"more":[{"label":"CO₂ from the Kipp generator","l":"CaCO3(s) + 2HCl(aq)","r":"CaCl2(aq) + CO2(g) + H2O(l)"},{"label":"Excess CO₂ clears it","l":"CaCO3(s) + CO2(g) + H2O(l)","r":"Ca(HCO3)2(aq)"}],"see":"Gas from the Kipp generator bubbles through clear limewater in the small tube, which turns milky.","why":"{CO2} is an acidic oxide, so it reacts with the base. Calcium carbonate is insoluble, so the solution clouds. Keep bubbling and the carbonate turns into soluble calcium hydrogencarbonate, the same chemistry that carves limestone caves.","remember":"Milky = {CaCO3}. Too much {CO2} clears it again.","speed":1,"credit":{"artist":"Карас Студио","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:24._%D0%88%D0%B0%D0%B3%D0%BB%D0%B5%D1%80%D0%BE%D0%B4_%D0%B4%D0%B8%D0%BE%D0%BA%D1%81%D0%B8%D0%B4_%D1%81%D0%BE_%D0%B2%D0%B0%D1%80%D0%BE%D0%B2%D0%B0_%D0%B2%D0%BE%D0%B4%D0%B0.ogv"}},{"id":"ostwald","topic":"gas","types":["redox","catalysis"],"title":"Ammonia + air over hot platinum","nick":"Ostwald process","color":"#ff6a3d","colorName":"glowing platinum","eq":{"l":"4NH3(g) + 5O2(g)","r":"4NO(g) + 6H2O(g)","over":"Pt"},"more":[{"label":"With excess air","l":"2NO(g) + O2(g)","r":"2NO2(g)"},{"label":"In industry","l":"4NO2(g) + O2(g) + 2H2O(l)","r":"4HNO3(aq)"}],"see":"The platinum foil keeps glowing orange on its own, and the liquid in the U-tube turns dark blue.","why":"The oxidation on the platinum surface is exothermic enough to keep the catalyst red-hot without a burner. The {NO2} formed is a strong oxidizer and turns the diphenylamine test solution blue. This is the first step in making nitric acid industrially.","remember":"{NH3} → NO → {NO2} → {HNO3}. Glowing Pt = exothermic catalysis.","speed":1,"credit":{"artist":"Карас Студио","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:34._%D0%9A%D0%B0%D1%82%D0%B0%D0%BB%D0%B8%D1%82%D0%B8%D1%87%D0%BA%D0%B0_%D0%BE%D0%BA%D1%81%D0%B8%D0%B4%D0%B0%D1%86%D0%B8%D1%98%D0%B0_%D0%BD%D0%B0_%D0%B0%D0%BC%D0%BE%D0%BD%D0%B8%D1%98%D0%B0%D0%BA.ogv"}},{"id":"al-amphoteric","topic":"gas","types":["amphoterism","gas evolution"],"yt":{"id":"HJJ5kC_SlfQ","start":3,"end":34,"author":"Periodic Videos"},"title":"Aluminium cans + {NaOH} and {HCl}","nick":"Amphoteric aluminium","color":"#c9d3d6","colorName":"aluminium grey","eq":{"l":"2Al(s) + 2NaOH(aq) + 6H2O(l)","r":"2Na[Al(OH)4](aq) + 3H2(g)"},"more":[{"label":"In acid","l":"2Al(s) + 6HCl(aq)","r":"2AlCl3(aq) + 3H2(g)"}],"see":"Aluminium drink cans sitting in sodium hydroxide and in hydrochloric acid both fizz and crumple as the metal is eaten away.","why":"Aluminium and its oxide are amphoteric: they react with acids to give Al³⁺ and with strong bases to give aluminate, [Al(OH)₄]⁻. Either way, once the protective oxide is dissolved, the metal reduces water or H⁺ to hydrogen. The plastic lining inside a can is untouched.","remember":"Al dissolves in acid and in strong base. Amphoteric.","credit":{"artist":"Periodic Videos","license":"YouTube","page":"https://www.youtube.com/watch?v=HJJ5kC_SlfQ&t=3s"}},{"id":"pbno3-heat","topic":"gas","types":["decomposition"],"yt":{"id":"YOMwFRJBy3U","start":6,"end":52,"author":"Make Me Scientific"},"title":"Heating lead(II) nitrate","nick":"White solid, brown gas","color":"#b5602d","colorName":"nitrogen dioxide brown","eq":{"l":"2Pb(NO3)2(s)","r":"2PbO(s) + 4NO2(g) + O2(g)","over":"heat"},"see":"The white crystals crackle as they are heated, brown gas fills the tube, and a glowing splint relights.","why":"Most metal nitrates decompose on heating to the metal oxide, brown NO₂ and oxygen. Group 1 nitrates (except lithium) are more stable and only lose oxygen to form nitrites (2NaNO₃ → 2NaNO₂ + O₂). The crackling is decrepitation: trapped water bursting the crystals.","remember":"Heavy-metal nitrate → oxide + brown NO₂ + O₂. Group 1 nitrate → nitrite + O₂.","credit":{"artist":"Make Me Scientific","license":"YouTube","page":"https://www.youtube.com/watch?v=YOMwFRJBy3U&t=6s"}},{"id":"chromate-b","topic":"equil","types":["equilibrium","acid–base"],"title":"Chromate ⇌ dichromate","nick":"Le Chatelier with acid and base","color":"#f07f1f","colorName":"dichromate orange","eq":{"l":"2CrO4^2-(aq) + 2H^+(aq)","a":"\u003c=>","r":"Cr2O7^2-(aq) + H2O(l)"},"see":"Yellow chromate turns orange with acid and back to yellow with base. Then barium ions pull the equilibrium by precipitating yellow {BaCrO4}.","why":"Adding {H^+} pushes the equilibrium right, to orange dichromate. Adding {OH^-} removes {H^+} and pulls it back to yellow chromate. Chromium is +6 on both sides, so this is an acid–base condensation, not a redox change.","remember":"Yellow chromate in base, orange dichromate in acid. Both Cr(+6).","speed":2.5,"credit":{"artist":"NCSSMDistanceEd","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Concentration_Effect_on_Chemical_Equilibrium_(chromate_and_dichromate).webm"}},{"id":"no2","topic":"equil","types":["equilibrium","thermodynamics"],"title":"{NO2} ⇌ {N2O4}, hot and cold","nick":"Temperature shifts K","color":"#b5602d","colorName":"nitrogen dioxide brown","eq":{"l":"2NO2(g)","a":"\u003c=>","r":"N2O4(g)"},"see":"A sealed tube of brown gas goes nearly colourless in ice water and deep red-brown in hot water.","why":"Joining two {NO2} radicals forms an N–N bond, so dimerization is exothermic (ΔH ≈ −57 kJ/mol). Heating favours the endothermic direction, back to brown {NO2}; cooling favours colourless {N2O4}. Unlike concentration or pressure changes, a temperature change alters the value of K itself.","remember":"Hot = brown {NO2}. Cold = colourless {N2O4}. Only temperature changes K.","speed":1.25,"credit":{"artist":"NCSSMDistanceEd","license":"CC BY 3.0","licenseUrl":"https://creativecommons.org/licenses/by/3.0","page":"https://commons.wikimedia.org/wiki/File:Temperature_Effect_on_Chemical_Equilibrium_(NO_and_NO2).webm"}},{"id":"briggs","topic":"equil","types":["kinetics","oscillating"],"title":"Iodate + {H2O2} + malonic acid + {Mn^2+}","nick":"Briggs–Rauscher oscillator","color":"#d18b1f","colorName":"iodine amber","eq":{"l":"IO3^-(aq) + 2H2O2(aq) + CH2(CO2H)2(aq) + H^+(aq)","r":"ICH(CO2H)2(aq) + 2O2(g) + 3H2O(l)"},"see":"Colourless → amber → blue-black, over and over.","why":"Two pathways take turns. A slow one builds up iodine (amber); once enough iodide accumulates, starch and triiodide give blue-black; then a fast radical pathway catalysed by {Mn^2+} takes over and the cycle resets. It keeps oscillating until the malonic acid or iodate runs low. Only a system far from equilibrium can oscillate like this.","remember":"Amber = {I2}. Blue-black = starch–{I3^-}. Mn²⁺ catalyses the reset.","speed":1,"credit":{"artist":"Maxim Bilovitskiy","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:Briggs%E2%80%93Rauscher_reaction.webm"}},{"id":"landolt","topic":"equil","types":["kinetics","clock reaction"],"title":"Iodate + bisulfite, with and without starch","nick":"Iodine clock","color":"#4a62d8","colorName":"starch–iodine blue","eq":{"l":"IO3^-(aq) + 3HSO3^-(aq)","r":"I^-(aq) + 3SO4^2-(aq) + 3H^+(aq)"},"more":[{"label":"Iodide meets iodate","l":"IO3^-(aq) + 5I^-(aq) + 6H^+(aq)","r":"3I2(aq) + 3H2O(l)"},{"label":"Bisulfite removes iodine instantly","l":"I2(aq) + HSO3^-(aq) + H2O(l)","r":"2I^-(aq) + SO4^2-(aq) + 3H^+(aq)"}],"see":"The clear \"cola\" suddenly turns black (with starch); the clear \"beer\" turns golden brown (without starch).","why":"As long as bisulfite remains, any iodine formed is immediately turned back into iodide. The moment the bisulfite runs out, iodine builds up all at once. With starch, it shows as the blue-black starch–triiodide complex; without starch, only the yellow-brown of iodine. The delay depends on concentrations and temperature, which makes it a classic rate experiment.","remember":"Clock time = time to use up the bisulfite. Starch makes the switch dramatic.","speed":1.5,"credit":{"artist":"Дени Ингилизовски","license":"CC BY-SA 4.0","licenseUrl":"https://creativecommons.org/licenses/by-sa/4.0","page":"https://commons.wikimedia.org/wiki/File:87._%D0%A0%D0%B5%D0%B4%D1%83%D0%BA%D1%86%D0%B8%D1%98%D0%B0_%D0%BD%D0%B0_%D1%98%D0%BE%D0%B4%D0%B0%D1%82_%D1%81%D0%BE_%D0%B4%D0%B8%D1%81%D1%83%D0%BB%D1%84%D0%B8%D1%82_%D1%81%D0%BE_%D0%BF%D1%80%D0%B8%D1%81%D1%83%D1%81%D1%82%D0%B2%D0%BE_%D0%B8_%D0%BE%D1%82%D1%81%D1%83%D1%81%D1%82%D0%B2%D0%BE_%D0%BD%D0%B0_%D1%81%D0%BA%D1%80%D0%BE%D0%B1_%D0%BA%D0%B0%D0%BA%D0%BE_%D0%BF%D0%BE%D0%BA%D0%B0%D0%B7%D0%B0%D1%82%D0%B5%D0%BB.ogg"}},{"id":"cocl2","topic":"equil","types":["equilibrium","complexes"],"yt":{"id":"WFdjJ_aS234","start":0,"end":50,"author":"Tommy Technetium"},"title":"Cobalt(II) chloride, hot and cold","nick":"Pink ⇌ blue","color":"#4a5fe0","colorName":"tetrachlorocobaltate blue","eq":{"l":"[Co(H2O)6]^2+(aq) + 4Cl^-(aq)","a":"\u003c=>","r":"[CoCl4]^2-(aq) + 6H2O(l)"},"see":"The cobalt solution turns blue when heated and pink when cooled.","why":"The forward reaction is endothermic, so heating shifts it toward the blue tetrachlorocobaltate ion and cooling shifts it back to the pink hexaaqua ion. The shape changes too: pink [Co(H₂O)₆]²⁺ is octahedral, while blue [CoCl₄]²⁻ is tetrahedral and absorbs much more strongly. Adding chloride also turns it blue; adding water turns it pink.","remember":"Hot / more Cl⁻ → blue tetrahedral. Cold / more water → pink octahedral.","credit":{"artist":"Tommy Technetium","license":"YouTube","page":"https://www.youtube.com/watch?v=WFdjJ_aS234&t=0s"}},{"id":"endothermic","topic":"equil","types":["thermodynamics","entropy"],"yt":{"id":"MyAzjSdc3Fc","start":4,"end":50,"author":"ThirstForScience"},"title":"Barium hydroxide + ammonium thiocyanate","nick":"Freezes to the board","color":"#bfe3f2","colorName":"frost white","eq":{"l":"Ba(OH)2·8H2O(s) + 2NH4SCN(s)","r":"Ba(SCN)2(aq) + 2NH3(g) + 10H2O(l)"},"see":"Two dry solids stirred together turn to slush and get so cold the beaker freezes to a wet board.","why":"The reaction absorbs heat (ΔH > 0) yet happens on its own. Two ordered crystalline solids become a solution, a gas and lots of free water molecules, a large increase in entropy. Since ΔG = ΔH − TΔS, the big positive ΔS makes ΔG negative. You can smell the ammonia.","remember":"Spontaneous but endothermic: entropy wins.","credit":{"artist":"ThirstForScience","license":"YouTube","page":"https://www.youtube.com/watch?v=MyAzjSdc3Fc&t=4s"}}],"media":"/assets/fume-hood/","home":"/"};
+const TOPICS = DATA.topics;
+const R = DATA.reactions;
+const byId = Object.fromEntries(R.map(r => [r.id, r]));
+const topicName = Object.fromEntries(TOPICS);
+const $ = (s, el = document) => el.querySelector(s);
+const feed = $('#feed');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ── storage: this browser first, then the viewer's private store when available
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('fumehood:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('fumehood:' + k, JSON.stringify(v)); } catch {} },
+};
+const state = {
+  topic: 'all', quiz: LS.get('quiz', true), shuffle: false, order: null, muted: true,
+  marks: LS.get('marks', {}), marksAt: LS.get('marksAt', 0), synced: false,
+};
+const remote = { ref: null, writing: false, again: false };
+
+// ── formula formatting: Cu^2+ → Cu²⁺, H2O → H₂O, (aq) → small state symbol
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function fmt(src) {
+  let s = esc(src);
+  const sups = [];
+  s = s.replace(/\^([0-9]*[+-])/g, (_, c) => { sups.push(c.replace('-', '−')); return '\u0001' + (sups.length - 1) + '\u0002'; });
+  s = s.replace(/([A-Za-z)\]])(\d+)/g, '$1<sub>$2</sub>');
+  s = s.replace(/\((s|l|g|aq|film)\)/g, '<span class="st">($1)</span>');
+  return s.replace(/\u0001(\d+)\u0002/g, (_, i) => '<sup>' + sups[i] + '</sup>');
+}
+const prose = src => String(src).split(/(\{[^}]+\})/).map(p =>
+  p.startsWith('{') && p.endsWith('}') ? '<span class="f">' + fmt(p.slice(1, -1)) + '</span>' : esc(p)).join('');
+function eqHtml(e, main) {
+  const over = e.over ? '<small>' + fmt(e.over) + '</small>' : '';
+  const arrow = '<span class="arr">' + over + '<b>' + (e.a === '<=>' ? '⇌' : '→') + '</b></span>';
+  const rhs = '<span class="rhs">' + fmt(e.r) + '</span>';
+  return '<span class="lhs">' + fmt(e.l) + '</span>' + arrow + rhs +
+    (main ? '<button class="reveal" type="button">Tap to reveal products</button>' : '');
+}
+
+const icons = {
+  play: '<svg viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  review: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.6"/><path d="M20 4.5V11h-6.5"/></svg>',
+  sound: '<svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6M21 9l-5 6"/></svg><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+};
+
+const MEDIA = DATA.media || '';
+const markBtns = '<button class="rbtn known" type="button" aria-pressed="false" title="Got it (G)"><i>' + icons.check + '</i>Got it</button>' +
+  '<button class="rbtn review" type="button" aria-pressed="false" title="Add to review pile (V)"><i>' + icons.review + '</i>Review</button>';
+
+function creditHtml(r) {
+  const c = r.credit;
+  if (r.yt) {
+    return 'Video by <a href="' + esc(c.page) + '" target="_blank" rel="noopener">' + esc(c.artist) + '</a> on YouTube' +
+      (r.yt.rate ? ', played at ' + r.yt.rate + '×' : '') + '.';
+  }
+  const lic = c.licenseUrl ? '<a href="' + esc(c.licenseUrl) + '" target="_blank" rel="noopener">' + esc(c.license) + '</a>' : esc(c.license);
+  return 'Video by <a href="' + esc(c.page) + '" target="_blank" rel="noopener">' + esc(c.artist) + '</a>, ' + lic +
+    ', via Wikimedia Commons; trimmed and re-encoded' + (r.speed && r.speed !== 1 ? ', sped up ' + r.speed + '×' : '') + '.';
+}
+
+function stageHtml(r) {
+  if (r.yt) {
+    return '<div class="stage is-yt"><div class="yt" style="background-image:url(https://i.ytimg.com/vi/' + r.yt.id + '/hqdefault.jpg)"></div></div>';
+  }
+  const c = r.credit;
+  return '<div class="stage">' +
+    '<video muted playsinline loop preload="none" poster="' + MEDIA + 'p/' + r.id + '.jpg" data-src="' + MEDIA + 'v/' + r.id + '.mp4"></video>' +
+    (r.speed && r.speed !== 1 ? '<span class="badge">' + r.speed + '× speed</span>' : '') +
+    '<span class="pause" aria-hidden="true">' + icons.play + '</span>' +
+    '<div class="rail">' + markBtns +
+      '<button class="rbtn sound" type="button" title="Sound on/off (M)"><i>' + icons.sound + '</i>Sound</button>' +
+    '</div>' +
+    '<a class="credit" href="' + esc(c.page) + '" target="_blank" rel="noopener">Video: ' + esc(c.artist) + ' · ' + esc(c.license) + '</a>' +
+    '<div class="prog"><i></i></div>' +
+  '</div>';
+}
+
+function shortHtml(r) {
+  const pairs = r.pairs ? '<div class="pairs">' + r.pairs.map(([ion, name, col]) =>
+    '<div class="pair" style="--c:' + col + '"><span class="ion">' + fmt(ion) + '</span><span class="sw"></span><span class="nm">' + esc(name) + '</span><span class="q">?</span></div>').join('') + '</div>' : '';
+  const eq = r.eq ? '<div class="eq">' + eqHtml(r.eq, true) + '</div>' : '';
+  const reveal = !r.eq && r.pairs ? '<button class="reveal" type="button">Tap to reveal colours</button>' : '';
+  const more = (r.more || []).map(m => '<div class="m"><span class="ml">' + esc(m.label) + '</span>' + eqHtml(m, false) + '</div>').join('');
+  const types = r.types.filter(t => t.toLowerCase() !== topicName[r.topic].toLowerCase()).map(esc);
+  if (r.yt && r.yt.rate) types.push(r.yt.rate + '× speed');
+  const kicker = '<div class="kicker"><span class="tp">' + esc(topicName[r.topic]) + '</span><span>' + types.join(' · ') + '</span></div>';
+  return '<section class="short' + (r.yt ? ' yt-short' : '') + '" data-id="' + r.id + '" style="--rx:' + r.color + '" aria-label="' + esc(r.title.replace(/[{}^]/g, '')) + '">' +
+    stageHtml(r) +
+    '<article class="card">' +
+      (r.yt ? '<div class="khead">' + kicker + '<div class="crail">' + markBtns + '</div></div>' : kicker) +
+      '<h2 class="title">' + prose(r.title) + '</h2>' +
+      '<p class="nick">' + prose(r.nick) + '</p>' +
+      eq + pairs + reveal +
+      '<p class="see"><span class="lbl">Watch for</span>' + prose(r.see) + '</p>' +
+      '<p class="locked">Reveal the products to unlock the explanation.</p>' +
+      '<button class="ntoggle" type="button" aria-expanded="false">Why it happens ' + icons.chev + '</button>' +
+      '<div class="notes">' +
+        (more ? '<div class="more">' + more + '</div>' : '') +
+        '<p class="why"><span class="lbl">Why it happens</span>' + prose(r.why) + '</p>' +
+        '<p class="mem"><span class="lbl">Remember</span>' + prose(r.remember) + '</p>' +
+        '<p class="src">Signature colour: ' + prose(r.colorName) + '. ' + creditHtml(r) + '</p>' +
+      '</div>' +
+    '</article>' +
+  '</section>';
+}
+
+// ── feed
+let sections = [];
+let active = null;
+const io = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) setActive(e.target);
+}, { root: feed, threshold: 0.6 });
+
+function listFor(topic) {
+  let ids = state.shuffle && state.order ? state.order : R.map(r => r.id);
+  if (topic === 'review') return ids.filter(id => state.marks[id] === 'review');
+  if (topic !== 'all') return ids.filter(id => byId[id].topic === topic);
+  return ids;
+}
+
+// ── YouTube embeds: one official player per nearby short, privacy-enhanced host, nothing drawn over it
+const yt = { players: new Map(), api: null, timer: 0 };
+function ytApi() {
+  if (!yt.api) yt.api = new Promise(resolve => {
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prev) prev(); resolve(window.YT); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+  });
+  return yt.api;
+}
+async function mountYt(sec) {
+  if (yt.players.has(sec)) return yt.players.get(sec);
+  const r = byId[sec.dataset.id];
+  const box = $('.yt', sec);
+  const holder = document.createElement('div');
+  box.appendChild(holder);
+  const entry = { ready: false, player: null };
+  yt.players.set(sec, entry);
+  const YT = await ytApi();
+  if (yt.players.get(sec) !== entry) return entry;
+  entry.player = new YT.Player(holder, {
+    host: 'https://www.youtube-nocookie.com',
+    videoId: r.yt.id,
+    playerVars: { start: r.yt.start, end: r.yt.end, mute: 1, playsinline: 1, rel: 0, iv_load_policy: 3, origin: location.origin },
+    events: {
+      onReady: () => { entry.ready = true; if (sec === active) playYt(sec); },
+      onStateChange: e => { if (e.data === 0 && sec === active) { entry.player.seekTo(r.yt.start, true); entry.player.playVideo(); } },
+      onError: () => {
+        box.innerHTML = '<a class="ytfail" href="https://www.youtube.com/watch?v=' + r.yt.id + '&t=' + r.yt.start + 's" target="_blank" rel="noopener">This video can\'t play here. Watch it on YouTube</a>';
+      },
+    },
+  });
+  return entry;
+}
+function unmountYt(sec) {
+  const e = yt.players.get(sec);
+  if (!e) return;
+  yt.players.delete(sec);
+  try { if (e.player) e.player.destroy(); } catch {}
+  const box = $('.yt', sec);
+  if (box) box.innerHTML = '';
+}
+function playYt(sec) {
+  const e = yt.players.get(sec);
+  if (!e || !e.ready) return;
+  const p = e.player, r = byId[sec.dataset.id];
+  if (state.muted) p.mute(); else p.unMute();
+  if (r.yt.rate) p.setPlaybackRate(r.yt.rate);
+  p.playVideo();
+  // loop the reaction segment: `end` only applies to the first pass
+  clearInterval(yt.timer);
+  yt.timer = setInterval(() => {
+    if (sec !== active || !e.ready) return clearInterval(yt.timer);
+    const t = p.getCurrentTime();
+    if (t >= r.yt.end - 0.25) { p.seekTo(r.yt.start, true); p.playVideo(); }
+  }, 300);
+}
+function pauseYt(sec) {
+  const e = yt.players.get(sec);
+  if (e && e.ready) e.player.pauseVideo();
+}
+
+function pauseShort(sec) {
+  if (!sec) return;
+  const v = $('video', sec);
+  if (v) v.pause(); else pauseYt(sec);
+}
+
+function render(scrollToId) {
+  io.disconnect();
+  pauseShort(active);
+  for (const s of [...yt.players.keys()]) unmountYt(s);
+  active = null;
+  const ids = listFor(state.topic);
+  const label = state.topic === 'all' ? 'all reactions' : state.topic === 'review' ? 'your review pile' : topicName[state.topic];
+  let html = ids.map(id => shortHtml(byId[id])).join('');
+  if (!ids.length) {
+    html = '<section class="short end"><h2>Review pile is empty</h2><p>Tap <b>Review</b> on any reaction you keep forgetting and it will collect here.</p><div class="row"><button class="tbtn" type="button" data-go="all">Browse all reactions</button></div></section>';
+  } else {
+    html += '<section class="short end"><h2>End of ' + esc(label) + '</h2><p>' + ids.length + ' reaction' + (ids.length > 1 ? 's' : '') + '. <span class="sync">' + syncNote() + '</span></p>' +
+      '<div class="row"><button class="tbtn" type="button" data-act="again">Shuffle and go again</button>' +
+      (state.topic !== 'review' ? '<button class="tbtn" type="button" data-go="review">Review pile</button>' : '') +
+      (state.topic !== 'all' ? '<button class="tbtn" type="button" data-go="all">All reactions</button>' : '') + '</div>' +
+      '<p class="keys"><kbd>↑</kbd> <kbd>↓</kbd> move · <kbd>Space</kbd> pause · <kbd>R</kbd> reveal · <kbd>G</kbd> got it · <kbd>V</kbd> review · <kbd>M</kbd> sound · <kbd>N</kbd> notes</p>' +
+      '<p class="keys">Wikimedia Commons clips are trimmed and re-encoded and keep their original licences' +
+      (R.some(r => r.yt) ? '; YouTube videos play from their creators\' channels' : '') + '. Credits are under "Why it happens" on each reaction.</p></section>';
+  }
+  feed.innerHTML = html;
+  sections = [...feed.querySelectorAll('.short')];
+  for (const s of sections) {
+    io.observe(s);
+    if (s.dataset.id) paintMarks(s);
+    const v = $('video', s);
+    if (!v) continue;
+    const bar = $('.prog i', s);
+    v.addEventListener('timeupdate', () => { if (v.duration) bar.style.transform = 'scaleX(' + (v.currentTime / v.duration) + ')'; });
+  }
+  renderChips();
+  const target = scrollToId && feed.querySelector('[data-id="' + scrollToId + '"]');
+  feed.scrollTop = target ? target.offsetTop : 0;
+  updateCount();
+}
+
+function syncNote() {
+  return state.synced ? 'Your marks sync to your account.' : 'Your marks are saved in this browser.';
+}
+
+function setActive(sec) {
+  if (active === sec) return;
+  if (active) {
+    pauseShort(active);
+    active.classList.remove('paused');
+  }
+  active = sec;
+  const idx = sections.indexOf(sec);
+  sections.forEach((s, j) => {
+    const d = j - idx;
+    const v = $('video', s);
+    if (v) { if (d >= -1 && d <= 2) loadVideo(v); else if (Math.abs(d) > 4) unloadVideo(v); }
+    else if (s.classList.contains('yt-short')) { if (d >= -1 && d <= 1) mountYt(s); else if (Math.abs(d) > 2) unmountYt(s); }
+  });
+  playActive();
+  updateCount();
+  if (sec.dataset.id && state.topic === 'all') LS.set('last', sec.dataset.id);
+}
+function loadVideo(v) { if (!v.getAttribute('src')) { v.src = v.dataset.src; v.preload = 'auto'; } }
+function unloadVideo(v) { if (v.getAttribute('src')) { v.pause(); v.removeAttribute('src'); v.preload = 'none'; v.load(); } }
+function playActive() {
+  if (!active) return;
+  if (active.classList.contains('yt-short')) { const sec = active; mountYt(sec).then(() => playYt(sec)); return; }
+  const v = $('video', active);
+  if (!v) return;
+  loadVideo(v);
+  v.muted = state.muted;
+  const p = v.play();
+  if (p && p.then) p.then(() => active && active.classList.remove('paused')).catch(() => active && active.classList.add('paused'));
+}
+function togglePlay(sec) {
+  const e = yt.players.get(sec);
+  if (e && e.ready) {
+    if (e.player.getPlayerState() === 1) e.player.pauseVideo(); else playYt(sec);
+    return;
+  }
+  const v = $('video', sec);
+  if (!v) return;
+  if (v.paused) { sec.classList.remove('paused'); v.muted = state.muted; v.play().catch(() => sec.classList.add('paused')); }
+  else { v.pause(); sec.classList.add('paused'); }
+}
+function step(dir) {
+  const idx = active ? sections.indexOf(active) : 0;
+  const t = sections[Math.max(0, Math.min(sections.length - 1, idx + dir))];
+  if (t) t.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+}
+function updateCount() {
+  const n = sections.filter(s => s.dataset.id).length;
+  const i = active && active.dataset.id ? sections.indexOf(active) + 1 : (active ? n : (n ? 1 : 0));
+  $('#count').textContent = n ? i + ' / ' + n : '0 / 0';
+}
+
+// ── marks
+function paintMarks(sec) {
+  const m = state.marks[sec.dataset.id];
+  $('.rbtn.known', sec).setAttribute('aria-pressed', m === 'known');
+  $('.rbtn.review', sec).setAttribute('aria-pressed', m === 'review');
+}
+function tally() {
+  const vals = Object.values(state.marks);
+  return { known: vals.filter(v => v === 'known').length, review: vals.filter(v => v === 'review').length };
+}
+function renderChips() {
+  const t = tally();
+  const counts = {};
+  for (const r of R) counts[r.topic] = (counts[r.topic] || 0) + 1;
+  const chip = (key, label, n, cls = '') => '<button class="chip ' + cls + '" type="button" data-topic="' + key + '" aria-pressed="' + (state.topic === key) + '">' + esc(label) + '<b>' + n + '</b></button>';
+  $('#chips').innerHTML = chip('all', 'All', R.length) + chip('review', 'Review pile', t.review, 'rev') +
+    TOPICS.filter(([k]) => counts[k]).map(([k, label]) => chip(k, label, counts[k])).join('');
+  $('#tally').innerHTML = '<span class="k" title="Marked “got it”">✓ ' + t.known + '</span><span class="r" title="In your review pile">↻ ' + t.review + '</span>';
+}
+function mark(sec, kind) {
+  const id = sec && sec.dataset.id;
+  if (!id) return;
+  state.marks[id] = state.marks[id] === kind ? undefined : kind;
+  if (!state.marks[id]) delete state.marks[id];
+  paintMarks(sec);
+  renderChips();
+  saveMarks();
+}
+function saveMarks() {
+  state.marksAt = Date.now();
+  LS.set('marks', state.marks);
+  LS.set('marksAt', state.marksAt);
+  clearTimeout(saveMarks.t);
+  saveMarks.t = setTimeout(pushRemote, 700);
+}
+async function pushRemote() {
+  if (!remote.ref) return;
+  if (remote.writing) { remote.again = true; return; }
+  remote.writing = true;
+  try { await remote.ref.set({ marks: state.marks, updatedAt: state.marksAt }); }
+  catch (e) { if (e && e.code !== 'unavailable' && e.code !== 'resource_exhausted') { remote.ref = null; state.synced = false; } }
+  remote.writing = false;
+  if (remote.again) { remote.again = false; pushRemote(); }
+}
+async function connectStore() {
+  if (!window.claude || typeof window.claude.use !== 'function') return;
+  try {
+    const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    if (!db || !user) return;
+    const uid = await user.id();
+    if (!uid) return;
+    const ref = db.doc('data/users/' + uid + '/progress');
+    const snap = await ref.get();
+    const data = snap.exists ? snap.data() : null;
+    remote.ref = ref;
+    state.synced = true;
+    if (data && (data.updatedAt || 0) > state.marksAt) {
+      state.marks = { ...(data.marks || {}) };
+      state.marksAt = data.updatedAt;
+      LS.set('marks', state.marks);
+      LS.set('marksAt', state.marksAt);
+      sections.forEach(s => s.dataset.id && paintMarks(s));
+      renderChips();
+    } else if (Object.keys(state.marks).length && (!data || state.marksAt > (data.updatedAt || 0))) {
+      pushRemote();
+    }
+    const note = feed.querySelector('.sync');
+    if (note) note.textContent = syncNote();
+  } catch { /* keep browser-only storage */ }
+}
+
+// ── controls
+function setQuiz(on) {
+  state.quiz = on;
+  document.body.classList.toggle('quiz', on);
+  $('#quizBtn').setAttribute('aria-pressed', on);
+  LS.set('quiz', on);
+}
+function setMuted(m) {
+  state.muted = m;
+  document.body.classList.toggle('sound-on', !m);
+  if (!active) return;
+  const v = $('video', active);
+  if (v) { v.muted = m; return; }
+  const e = yt.players.get(active);
+  if (e && e.ready) { if (m) e.player.mute(); else e.player.unMute(); }
+}
+function shuffled() {
+  const a = R.map(r => r.id);
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function reveal(sec) {
+  if (!sec || !sec.dataset.id) return;
+  sec.classList.add('revealed');
+}
+function toggleNotes(sec) {
+  if (!sec || !sec.dataset.id) return;
+  const open = sec.classList.toggle('open');
+  $('.ntoggle', sec).setAttribute('aria-expanded', open);
+}
+
+feed.addEventListener('click', e => {
+  const sec = e.target.closest('.short');
+  const go = e.target.closest('[data-go]');
+  if (go) { state.topic = go.dataset.go; render(); return; }
+  if (e.target.closest('[data-act="again"]')) { state.shuffle = true; state.order = shuffled(); $('#shuffleBtn').setAttribute('aria-pressed', true); render(); return; }
+  if (!sec) return;
+  if (e.target.closest('.reveal')) { reveal(sec); return; }
+  if (e.target.closest('.ntoggle')) { toggleNotes(sec); return; }
+  if (e.target.closest('.rbtn.known')) { mark(sec, 'known'); return; }
+  if (e.target.closest('.rbtn.review')) { mark(sec, 'review'); return; }
+  if (e.target.closest('.rbtn.sound')) { setMuted(!state.muted); if (sec === active) playActive(); return; }
+  if (e.target.closest('.credit')) return;
+  if (e.target.closest('.stage')) togglePlay(sec);
+});
+$('#chips').addEventListener('click', e => {
+  const c = e.target.closest('.chip');
+  if (!c || c.dataset.topic === state.topic) return;
+  state.topic = c.dataset.topic;
+  render();
+});
+$('#quizBtn').addEventListener('click', () => setQuiz(!state.quiz));
+$('#shuffleBtn').addEventListener('click', () => {
+  state.shuffle = !state.shuffle;
+  state.order = state.shuffle ? shuffled() : null;
+  $('#shuffleBtn').setAttribute('aria-pressed', state.shuffle);
+  render();
+});
+$('#prevBtn').addEventListener('click', () => step(-1));
+$('#nextBtn').addEventListener('click', () => step(1));
+$('#brand').addEventListener('click', e => { e.preventDefault(); feed.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' }); });
+window.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'arrowdown' || k === 'j' || k === 'pagedown') { e.preventDefault(); step(1); }
+  else if (k === 'arrowup' || k === 'k' || k === 'pageup') { e.preventDefault(); step(-1); }
+  else if (k === ' ') { if (e.target.closest && e.target.closest('button, a')) return; e.preventDefault(); if (active) togglePlay(active); }
+  else if (k === 'r') reveal(active);
+  else if (k === 'g') mark(active, 'known');
+  else if (k === 'v') mark(active, 'review');
+  else if (k === 'm') { setMuted(!state.muted); playActive(); }
+  else if (k === 'n') toggleNotes(active);
+});
+document.addEventListener('visibilitychange', () => {
+  if (!active) return;
+  if (document.hidden) pauseShort(active); else if (!active.classList.contains('paused')) playActive();
+});
+
+if (DATA.home) { const h = $('#home'); h.href = DATA.home; h.hidden = false; }
+setQuiz(state.quiz);
+setMuted(true);
+const hash = decodeURIComponent(location.hash.slice(1));
+render(byId[hash] ? hash : LS.get('last', null));
+connectStore();
+</script>
+
+</body>
+</html>
