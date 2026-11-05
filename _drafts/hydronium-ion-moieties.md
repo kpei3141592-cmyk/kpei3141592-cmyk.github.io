@@ -16,4 +16,4 @@ So in water, proton transfer happens extremely quickly thanks to something calle
 
 By my understanding, the proton transfer happens something like this:
 
-<img width="2095" height="988" alt="image" src="https://github.com/user-attachments/assets/5b7b5f5c-ee45-4df6-8336-ca43c850cea0" />
+<img width="548" height="261" alt="image" src="https://github.com/user-attachments/assets/b463b13a-9ade-4c31-815e-a997e401e2c6" />
