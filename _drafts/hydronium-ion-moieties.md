@@ -14,3 +14,6 @@ So in water, proton transfer happens extremely quickly thanks to something calle
 
 [https://www.researchgate.net/figure/Structure-of-the-water-Zundel-and-Eigen-cations-The-Zundel-and-Eigen-cations-correspond_fig3_7367352](url)
 
+By my understanding, the proton transfer happens something like this:
+
+<img width="2095" height="988" alt="image" src="https://github.com/user-attachments/assets/5b7b5f5c-ee45-4df6-8336-ca43c850cea0" />
