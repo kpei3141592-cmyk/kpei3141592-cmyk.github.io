@@ -6,6 +6,8 @@ description: some more cool stuff I found while procrastinating
 tags: inorganic-chemistry
 ---
 
+This guy better stop procrastinating
+
 Hmm this is some interesting stuff
 
 So in water, proton transfer happens extremely quickly thanks to something called the Grotthuss mechanism. Basically, there are two moieties of Hydronium: the **Zundel** moiety and the **Eigen** moiety.
@@ -22,4 +24,4 @@ This is favored as a mode of transport because instead of having to physically m
 
 A natural question would be whether other molecules also engage in similar mechanisms, which is the case. Any molecule that forms strong hydrogen-bond networks transfers protons in the same way.
 
-A great example of the Grotthuss mechanism in action is the hydration of $$\ce{CO2}$$ to form carbonic acid. The reaction equation is given as follows: $$\ce{nH2O + CO2 -> (n-1)H2O + H2CO3}$$. If we were to use only one water molecule in this reaction, first there would be a four-membered ring as an intermediate (which is already bad), but the water molecule would also have to directly transfer both of its protons to the $$\ce{CO2}$$
+A great example of the Grotthuss mechanism in action is the hydration of $$\ce{CO2}$$ to form carbonic acid. The reaction equation is given as follows: $$\ce{nH2O + CO2 -> (n-1)H2O + H2CO3}$$. If we were to use only one water molecule in this reaction, first there would be a four-membered ring as an intermediate (which is already bad), but the water molecule would also have to directly transfer both of its protons to the $$\ce{CO2}$$. According to some paper I read, the most favorable reaction mechanism involves 3 water molecules. One of the molecules attacks the carbon while using a Grotthuss-like mechanism to transfer its protons to the other two.
