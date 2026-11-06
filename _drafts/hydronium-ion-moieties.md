@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Zundel and Eigen moieties
+title: The Grotthuss mechanism
 date: 2026-10-23
 description: some more cool stuff I found while procrastinating
 tags: inorganic-chemistry
@@ -17,3 +17,9 @@ So in water, proton transfer happens extremely quickly thanks to something calle
 By my understanding, the proton transfer happens something like this:
 
 <img width="548" height="261" alt="image" src="https://github.com/user-attachments/assets/b463b13a-9ade-4c31-815e-a997e401e2c6" />
+
+This is favored as a mode of transport because instead of having to physically move solvated ions through a solution, the ions transfer through a network of molecules.
+
+A natural question would be whether other molecules also engage in similar mechanisms, which is the case. Any molecule that forms strong hydrogen bond networks transfers protons in the same way.
+
+A great example of the Grotthuss mechanism in action is the hydration of $$\ce{CO2}$$ to form carbonic acid.
