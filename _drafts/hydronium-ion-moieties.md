@@ -22,4 +22,4 @@ This is favored as a mode of transport because instead of having to physically m
 
 A natural question would be whether other molecules also engage in similar mechanisms, which is the case. Any molecule that forms strong hydrogen-bond networks transfers protons in the same way.
 
-A great example of the Grotthuss mechanism in action is the hydration of $$\ce{CO2}$$ to form carbonic acid. The reaction equation is given as follows: $$\ce{nH2O + CO2 -> (n-1)H2O + H2CO3}$$
+A great example of the Grotthuss mechanism in action is the hydration of $$\ce{CO2}$$ to form carbonic acid. The reaction equation is given as follows: $$\ce{nH2O + CO2 -> (n-1)H2O + H2CO3}$$. If we were to use only one water molecule in this reaction, first there would be a four-membered ring as an intermediate (which is already bad), but the water molecule would also have to directly transfer both of its protons to the $$\ce{CO2}$$
