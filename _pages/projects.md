@@ -3,7 +3,7 @@ layout: page
 title: projects
 permalink: /projects/
 description:
-nav: false # set to true once you've added a project to _projects/
+nav: true
 nav_order: 2
 horizontal: false
 ---
